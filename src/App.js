@@ -98,7 +98,7 @@ const AISidebar = ({ activeItem, onSidebarItemClick, themeClasses }) => {
       {/* Company Logo Placeholder - Replaced with image */}
       <div className={`w-10 h-10 mt-3 mb-4 rounded-full flex items-center justify-center overflow-hidden shadow-md`}>
         <img
-          src="https://placehold.co/40x40/000/FFF?text=Logo" // Placeholder image URL
+          src="./Logo.png" // Placeholder image URL
           alt="Company Logo"
           className="w-full h-full object-cover"
           onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/40x40/555/FFF?text=Error'; }} // Fallback on error
