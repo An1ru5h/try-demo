@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Bot, Sparkles, DollarSign, Users, BookOpen, Settings, Search, Trash2, ClipboardCopy, FileText, Plus, ChevronDown, Send, Wrench, CheckCircle, XCircle, Book, FolderOpen, Info, Code, X, Square } from 'lucide-react'; // Import Square icon for stop button
+import { Bot, Sparkles, DollarSign, Users, BookOpen, Settings, Search, Trash2, ClipboardCopy, FileText, Plus, ChevronDown, Send, Wrench, CheckCircle, XCircle, Book, FolderOpen, Info, Code, X, Square, Cloud, MessageSquareText, Palette, BrainCircuit, Blocks, Play } from 'lucide-react'; // Import Square icon for stop button and new icons
 
 /**
  * Note: To use this component, you need to have React and Tailwind CSS set up.
  * You also need to install the lucide-react library:
  * npm npm install lucide-react
  */
-
 // Custom Gradient LayoutDashboard Icon component
 const GradientLayoutDashboardIcon = ({ className }) => (
   <svg
@@ -30,7 +29,7 @@ const GradientLayoutDashboardIcon = ({ className }) => (
 // An array of objects to define the navigation links for easier management and rendering.
 const menuItems = [
   { id: 'workspace', icon: Sparkles, label: 'Workspace' },
-  { id: 'tools', icon: Wrench, label: 'Tools' }, // Using Wrench icon
+  { id: 'tools', icon: Code, label: 'Tools' }, // Changed icon to Code
   { id: 'funding', icon: DollarSign, label: 'Funding' },
   { id: 'resources', icon: BookOpen, label: 'Resources' },
   { id: 'community', icon: Users, label: 'Community' },
@@ -595,33 +594,23 @@ const originalToolData = {
     { name: "DataRobot / H2O.ai", description: "End-to-end AutoML platforms" },
     { name: "PyCaret", description: "Low-code Python library for ML" },
   ],
-  "No-Code / Low-Code AI Builders": [
-    { name: "Pinecone / ChromaDB", description: "Vector databases for AI memory" },
-    { name: "Bubble + OpenAI Plugin", description: "Build AI apps visually" },
-    { name: "Zapier / Make (Integromat)", description: "Connect AI APIs with apps" },
-    { name: "Replit AI / Anysphere", description: "AI-assisted coding platforms" },
-  ],
-  "AI Development Assistants": [
-    { name: "GitHub Copilot / CodeWhisperer", description: "AI pair programming" },
-    { name: "Codeium / Tabnine", description: "Lightweight coding autocompletion" },
-    { name: "Cursor", description: "AI-powered IDE" },
-  ],
+  // "No-Code / Low-Code AI Builders" was removed in the previous turn
   "Natural Language Processing (NLP)": [
     { name: "spaCy / NLTK", description: "Classic NLP libraries" },
     { name: "Hugging Face Transformers", description: "Pretrained LLMs (BERT, T5, etc.)" },
     { name: "Rasa / Dialogflow", description: "Chatbot development frameworks" },
   ],
-  "Security, Compliance & Ethics": [
-    { name: "Snyk / SonarQube", description: "Secure coding & vulnerability scans" },
-    { name: "Fairlearn / AI Fairness 360", description: "Bias & fairness audits" },
-    { name: "Truera", description: "Explainability & model governance" },
-  ],
+  // "Security, Compliance & Ethics" was removed in the previous turn
 };
 
 // Function to process toolData to split names with '/' and add detailed info
 const processToolData = (data) => {
   const newToolData = {};
   for (const category in data) {
+    // Skip "AI Development Assistants" and "Security, Compliance & Ethics" categories
+    if (category === "AI Development Assistants" || category === "Security, Compliance & Ethics") {
+      continue;
+    }
     newToolData[category] = [];
     data[category].forEach(tool => {
       // Manual detailed info for the first few tools.
@@ -695,9 +684,9 @@ const processedToolData = processToolData(originalToolData);
 
 
 // ToolsSection Component - Now displays categorized AI tools using a dropdown
-const ToolsSection = ({ addToast, themeClasses }) => { // Receive addToast prop
+const ToolsSection = ({ addToast, themeClasses, canvasCode, setCanvasCode, naturalLangPrompt, setNaturalLangPrompt, handleGenerateCodeFromPrompt, naturalLangPromptRef }) => { // Receive new props
   const [selectedCategory, setSelectedCategory] = useState('All Categories');
-  const [addedTools, setAddedTools] = useState({}); // State to track added tools
+  const [addedTools, setAddedTools] = useState({}); // State to track added tools, corrected initialization
   const [searchTerm, setSearchTerm] = useState(''); // New state for search term
 
 
@@ -752,7 +741,7 @@ const ToolsSection = ({ addToast, themeClasses }) => { // Receive addToast prop
           <input
             type="text"
             placeholder="Search tools..."
-            className={`w-full pl-8 pr-3 py-1.5 rounded-md ${themeClasses.cardBg} ${themeClasses.borderColor} border ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')} focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm`}
+            className={`pl-8 pr-3 py-1.5 rounded-md ${themeClasses.cardBg} ${themeClasses.borderColor} border ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')} focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -854,226 +843,216 @@ const SettingsSection = ({ themeClasses, theme, setTheme }) => {
   );
 };
 
-// New CodingCanvasSection Component
-const CodingCanvasSection = ({ themeClasses, onClose, initialCodePrompt }) => {
-  const [code, setCode] = useState('');
-  const [output, setOutput] = useState('');
-  const [activeView, setActiveView] = useState('code'); // 'code' or 'preview'
-  const outputRef = useRef(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false); // New state for generation loading
-  const [isCodeRunning, setIsCodeRunning] = useState(false); // New state for code execution
+// CodingCanvasSection Component - Implemented interactive coding canvas with view modes
+const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receives code and setCode as props
+  const [codeOutput, setCodeOutput] = useState(''); // For successful code execution output
+  const [codeError, setCodeError] = useState(''); // For errors during code execution
+  const [detectedLanguage, setDetectedLanguage] = useState('javascript'); // New state for detected language
+  const [currentView, setCurrentView] = useState('code'); // 'code', 'output'
+  const [htmlOutputContent, setHtmlOutputContent] = useState(''); // New state to store HTML string for iframe
 
-  // Function to call Gemini API for code generation
-  const callGeminiAPIForCode = useCallback(async (promptContent) => {
-    setIsGenerating(true);
+
+  // Function to detect the programming language based on code content
+  const detectLanguage = useCallback((code) => {
+    const trimmedCode = code.trim();
+
+    // Basic heuristics for language detection
+    if (trimmedCode.startsWith('<') && trimmedCode.endsWith('>')) {
+      if (/<html|<body|<div|<p|<span|<a|<img/.test(trimmedCode.toLowerCase())) {
+        return 'html';
+      }
+    }
+    if (/(def\s|import\s|class\s|print\(|for\s.*in\s|if\s.*:|elif\s.*:|else:|#.*python)/.test(trimmedCode.toLowerCase())) {
+      return 'python';
+    }
+    if (/(function\s|let\s|const\s|var\s|console\.log|document\.|window\.|fetch\()/.test(trimmedCode.toLowerCase())) {
+      return 'javascript';
+    }
+    // Simple CSS detection (looks for rules, but avoids confusion with HTML or JS)
+    if (/(^\s*\.[a-zA-Z0-9_-]+\s*\{|^\s*#[a-zA-Z0-9_-]+\s*\{|\s*[^\{]*\{.*\})/s.test(trimmedCode) && !trimmedCode.includes('<') && !trimmedCode.includes('function') && !trimmedCode.includes('def')) {
+      return 'css';
+    }
+    return 'unknown';
+  }, []);
+
+  // Effect to update detected language when code changes (from internal or external updates)
+  useEffect(() => {
+    const newDetectedLanguage = detectLanguage(code);
+    setDetectedLanguage(newDetectedLanguage);
+    // Clear HTML output if the language is no longer HTML
+    if (newDetectedLanguage !== 'html') {
+      setHtmlOutputContent('');
+    }
+  }, [code, detectLanguage]);
+
+
+  const handleRunCode = () => {
+    setCodeOutput('');
+    setCodeError('');
+    setHtmlOutputContent('');
+    // No explicit currentView change here, as it's triggered by the Output tab click
+
+    if (detectedLanguage === 'html') {
+      setHtmlOutputContent(code);
+      return;
+    }
+
+    let capturedOutput = '';
+    const originalConsoleLog = console.log;
+    console.log = (...args) => {
+      capturedOutput += args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ') + '\n';
+    };
+
     try {
-      let chatHistory = [];
-      chatHistory.push({ role: "user", parts: [{ text: `Generate JavaScript code for the following: ${promptContent}. Provide only the code, no explanations or markdown wrappers.` }] });
-      const payload = { contents: chatHistory };
-      const apiKey = ""; // API key will be provided by Canvas
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-
-      const result = await response.json();
-      if (result.candidates && result.candidates.length > 0 &&
-          result.candidates[0].content && result.candidates[0].content.parts &&
-          result.candidates[0].content.parts.length > 0) {
-        let generatedCode = result.candidates[0].content.parts[0].text;
-
-        // Clean up markdown fences if they are present
-        generatedCode = generatedCode.replace(/```javascript\n|```/g, '').trim();
-
-        // Add a comment to indicate it was AI-generated
-        generatedCode = `// AI-generated code based on prompt: "${promptContent}"\n\n${generatedCode}`;
-
-        return generatedCode;
+      if (detectedLanguage === 'javascript') {
+        new Function(code)();
+      } else if (detectedLanguage === 'css') {
+        capturedOutput = "CSS code detected. Direct execution or live preview of standalone CSS is not supported in this environment. You can paste it into an HTML structure to see its effect.";
+      } else if (detectedLanguage === 'python') {
+        capturedOutput = "Python code detected. Direct execution of Python in the browser is not supported without a backend server or a client-side WebAssembly interpreter (e.g., Pyodide).";
       } else {
-        console.error('Gemini API response structure unexpected:', result);
-        return `// Error: Could not generate code. Unexpected API response.`;
+        capturedOutput = `Unsupported language detected: ${detectedLanguage}. This environment currently supports direct execution of JavaScript and rendering of HTML.`;
       }
-    } catch (error) {
-      console.error('Error calling Gemini API for code generation:', error);
-      return `// Error: Failed to generate code. ${error.message}`;
-    } finally {
-      setIsGenerating(false);
-    }
-  }, []);
-
-
-  // Function to simulate code execution (very basic, for demonstration)
-  const runCode = useCallback(() => {
-    setIsCodeRunning(true); // Set code running state
-    setIsLoading(true); // Set loading to true when code starts running
-    try {
-      // Clear previous output
-      setOutput('');
-      // This is a *very* simplistic and unsafe way to run arbitrary JS.
-      // In a real application, you would send code to a secure sandbox (e.g., a web worker, iframe with limited permissions, or a backend).
-      // For this demo, we'll capture console.log and execute using new Function().
-      let capturedOutput = '';
-      const originalConsoleLog = console.log;
-      console.log = (...args) => {
-        capturedOutput += args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : String(arg)).join(' ') + '\n';
-      };
-
-      // Execute user's JavaScript code using new Function()
-      // This addresses the 'direct-eval' warning by avoiding direct eval,
-      // but still executes arbitrary code, so security considerations apply.
-      const func = new Function(code);
-      const result = func();
-
-      console.log = originalConsoleLog; // Restore original console.log
-
-      if (result !== undefined) {
-        capturedOutput += 'Result: ' + (typeof result === 'object' ? JSON.stringify(result) : String(result)) + '\n';
-      }
-      setOutput(capturedOutput);
-      setActiveView('preview'); // Switch to preview after running code
-
     } catch (e) {
-      setOutput(`Error: ${e.message}`);
-      setActiveView('preview'); // Switch to preview to show error
+      setCodeError(e.message);
     } finally {
-      setIsLoading(false); // Set loading to false after execution (success or error)
-      setIsCodeRunning(false); // Reset code running state
-    }
-  }, [code]);
+      console.log = originalConsoleLog; // Restore console.log
 
-  // Use useEffect to trigger code generation and auto-run when initialCodePrompt changes
-  useEffect(() => {
-    if (initialCodePrompt) {
-      const generateAndSetCode = async () => {
-        const generatedCode = await callGeminiAPIForCode(initialCodePrompt);
-        setCode(generatedCode);
-        // Automatically run the code after generation
-        // Ensure that `code` state is updated before calling runCode in the next tick
-        setTimeout(() => runCode(), 0);
-      };
-      generateAndSetCode();
+      setCodeOutput(capturedOutput);
+      if (!codeError && detectedLanguage === 'javascript' && !capturedOutput) { // For JS without errors or captured output
+        setCodeOutput("Execution completed with no console output.");
+      }
     }
-  }, [initialCodePrompt, callGeminiAPIForCode, runCode]); // Added runCode to dependencies
+  };
 
-  const clearCode = useCallback(() => {
-    setCode('');
-    setOutput('');
-    setIsLoading(false); // Also reset loading when clearing
-    setIsGenerating(false); // Also reset generating state
-    setIsCodeRunning(false); // Reset code running state
-    setActiveView('code'); // Reset to code view
-  }, []);
+  // Removed handleStopCode as it's no longer explicitly called by a button
 
-  useEffect(() => {
-    // Scroll to bottom of output on new output
-    if (outputRef.current) {
-      outputRef.current.scrollTop = outputRef.current.scrollHeight;
-    }
-  }, [output]);
 
   return (
-    <div className={`flex flex-col h-full rounded-lg ${themeClasses.cardBg} ${themeClasses.textPrimary} relative`}>
-      {/* Top Bar for Code/Preview and Close Button */}
-      <div className={`flex justify-between items-center px-4 py-2 bg-gray-900 border-b ${themeClasses.borderColor}`}>
-        <div className="flex space-x-2">
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.appBg} ${themeClasses.textPrimary} relative overflow-hidden w-full`}>
+      {/* Top Bar for View Modes */}
+      <div className={`flex justify-between items-center px-4 py-2 bg-gray-900 border-b ${themeClasses.borderColor} flex-shrink-0`}>
+        <span className={`text-sm ${themeClasses.textTertiary}`}>Language: <span className="font-semibold capitalize">{detectedLanguage}</span></span>
+        <div className="flex items-center space-x-2">
+          {/* Code Button */}
           <button
-            onClick={() => setActiveView('code')}
-            className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors duration-200 ${
-              activeView === 'code' ? 'bg-blue-600 text-white' : `${themeClasses.buttonSecondaryBg} ${themeClasses.textSecondary}`
-            }`}
+            onClick={() => { setCurrentView('code'); }}
+            className={`${currentView === 'code' ? 'bg-blue-600 text-white' : 'text-white'} px-3 py-1 rounded-md text-sm font-semibold`}
           >
             Code
           </button>
+          {/* Output Button - Now triggers code execution */}
           <button
-            onClick={() => setActiveView('preview')}
-            className={`px-3 py-1 rounded-md text-sm font-semibold transition-colors duration-200 ${
-              activeView === 'preview' ? 'bg-blue-600 text-white' : `${themeClasses.buttonSecondaryBg} ${themeClasses.textSecondary}`
-            }`}
+            onClick={() => {
+              setCurrentView('output');
+              handleRunCode(); // Execute code when output tab is clicked
+            }}
+            className={`${currentView === 'output' ? 'bg-blue-600 text-white' : 'text-white'} px-3 py-1 rounded-md text-sm font-semibold`}
           >
-            Preview
+            Output
           </button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={runCode}
-            disabled={isLoading || isGenerating || isCodeRunning}
-            className={`bg-blue-600 hover:bg-blue-700 text-white w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed`}
-            title={isCodeRunning ? "Stop Code" : "Run Code"}
-          >
-            {isCodeRunning ? <Square className="w-4 h-4" /> : <Play className="w-4 h-4" />} {/* Dynamic Icon */}
-          </button>
-          <button
-            onClick={onClose}
-            className={`${themeClasses.buttonSecondaryBg} ${themeClasses.buttonSecondaryHoverBg} ${themeClasses.textPrimary} w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200`}
-            title="Close Canvas"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          {/* Play/Stop Buttons removed */}
         </div>
       </div>
 
-      {/* Content Area (Code Editor or Preview) */}
-      <div className="flex-1 p-4 overflow-y-auto">
-        {activeView === 'code' ? (
-          <textarea
-            id="code-input"
-            className={`w-full h-full p-3 rounded-md border ${themeClasses.borderColor} ${themeClasses.cardBg} ${themeClasses.textPrimary} resize-none font-mono text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 custom-scrollbar`}
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder={`console.log("Hello, Canvas!");\n// Generated code will appear here. Try writing some JavaScript!`}
-          />
-        ) : (
-          <pre
-            id="code-output"
-            ref={outputRef}
-            className={`w-full h-full p-3 rounded-md border ${themeClasses.borderColor} ${themeClasses.sidebarBg} ${themeClasses.textPrimary} overflow-auto font-mono text-sm whitespace-pre-wrap custom-scrollbar`}
-          >
-            {output || "Run your code to see output here..."}
-          </pre>
+      {/* Content Area based on currentView */}
+      <div className="flex-grow w-full h-full flex flex-col">
+        {currentView === 'code' && (
+          <div className="w-full h-full flex flex-col bg-gray-900">
+            <textarea
+              value={code} // Uses prop value
+              onChange={(e) => setCode(e.target.value)} // Uses prop setter
+              placeholder="Write your code here..."
+              className="flex-grow p-4 font-mono text-sm bg-transparent outline-none resize-none custom-scrollbar"
+              style={{ color: themeClasses.textPrimary }}
+              spellCheck="false" // Disable browser spell check for code
+            ></textarea>
+          </div>
+        )}
+
+        {currentView === 'output' && (
+          <div className={`w-full h-full bg-gray-800 flex flex-col p-4 text-sm font-mono custom-scrollbar overflow-y-auto`}>
+            <h3 className={`font-semibold mb-2 ${themeClasses.textPrimary}`}>
+              {detectedLanguage === 'html' ? 'HTML Preview' : 'Code Output:'}
+            </h3>
+            {htmlOutputContent ? (
+              <iframe
+                title="HTML Preview"
+                srcDoc={htmlOutputContent}
+                sandbox="allow-scripts allow-same-origin" // Basic sandbox for security
+                className="flex-grow border-none w-full h-full bg-white rounded-md"
+              ></iframe>
+            ) : (
+              <>
+                <pre className="whitespace-pre-wrap text-green-400">{codeOutput}</pre>
+                {codeError && <pre className="text-red-400 mt-2 whitespace-pre-wrap">Error: {codeError}</pre>}
+              </>
+            )}
+          </div>
         )}
       </div>
-      
-       {/* Small animation to demonstrate a "running" state */}
-      {(isLoading || isGenerating) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-20 rounded-lg">
-          <div className="dot-flashing"></div>
-        </div>
-      )}
     </div>
   );
 };
 
-// Helper Icon for Play
-const Play = ({ className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-);
 
-
-// Placeholder Chatbot Interface component
-const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = false }) => { // Receive onOpenCodingCanvas prop and new isMinimalMode prop
+// Chatbot Interface component - Only one definition is needed
+const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = false, initialChatPrompt, onCodeGenerated, codeGenerationAPI }) => { // Receive new props
   const [chatHistory, setChatHistory] = useState([]);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [model, setModel] = useState('gemini-2.0-flash'); // Reintroduced model state
   const fileInputRef = useRef(null); // Ref for the hidden file input
+  const chatEndRef = useRef(null); // Ref for scrolling to the bottom of chat
+  const [selectedFileName, setSelectedFileName] = useState(null); // New state for selected file name
+
+
+  // Use effect to handle initial prompt (for canvas)
+  useEffect(() => {
+    if (initialChatPrompt && chatHistory.length === 0) {
+      // Simulate user sending the prompt and get AI response
+      const initialMessage = { role: "user", text: initialChatPrompt };
+      setChatHistory([initialMessage]);
+      // Trigger AI response for this initial prompt
+      handleSendMessage(initialChatPrompt, true); // True means it's an initial message, not from input
+    }
+  }, [initialChatPrompt]); // Only run once on mount with initial prompt
+
+
+  // Scroll to bottom when chat history changes
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [chatHistory]);
+
 
   // Function to call Gemini API
-  const callGeminiAPI = useCallback(async (userMessage, currentModel, isSummaryRequest = false) => {
+  const callGeminiAPI = useCallback(async (userMessage, currentModel, isSummaryRequest = false, isDeepResearch = false) => {
     setIsLoading(true);
     let chatHistoryToSend = [];
 
+    // Construct chat history for the API call
     if (isSummaryRequest) {
-        // For summarization, send the entire current chat history
         chatHistory.forEach(msg => {
-            chatHistoryToSend.push({ role: msg.role, parts: [{ text: msg.text }] });
+            chatHistoryToSend.push({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
         });
         chatHistoryToSend.push({ role: "user", parts: [{ text: "Please summarize the entire conversation concisely." }] });
-    } else if (userMessage.includes("Generate startup ideas for:")) {
+    } else if (userMessage.startsWith("Generate startup ideas for:")) {
          chatHistoryToSend.push({ role: "user", parts: [{ text: userMessage }] });
+    } else if (userMessage.startsWith("Generate JavaScript code for:")) {
+        // For code generation, only send the specific request prompt
+        chatHistoryToSend.push({ role: "user", parts: [{ text: userMessage }] });
+        // Use the dedicated codeGenerationAPI prop if provided
+        if (codeGenerationAPI) {
+          const generatedCode = await codeGenerationAPI(userMessage.replace("Generate JavaScript code for:", "").trim());
+          if (onCodeGenerated) {
+            onCodeGenerated(generatedCode); // Pass generated code to parent
+          }
+          return "Code generated successfully!"; // Acknowledge code generation
+        }
+    } else if (isDeepResearch) {
+        chatHistoryToSend.push({ role: "user", parts: [{ text: `Perform market research on: "${userMessage}"` }] });
     }
     else {
         chatHistoryToSend.push({ role: "user", parts: [{ text: userMessage }] });
@@ -1106,29 +1085,48 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
     } finally {
       setIsLoading(false);
     }
-  }, [chatHistory]);
+  }, [chatHistory, codeGenerationAPI, onCodeGenerated]); // Added new dependencies
 
 
-  const handleSendMessage = useCallback(async () => {
-    if (message.trim() === '') return;
+  const handleSendMessage = useCallback(async (msgContentParam = message, isInitial = false) => {
+    // Ensure msgContentParam is a string before calling .trim()
+    const msgContent = String(msgContentParam);
 
-    const newUserMessage = { role: "user", text: message };
-    setChatHistory((prevHistory) => [...prevHistory, newUserMessage]);
+    if (msgContent.trim() === '' && !isInitial) return;
+
+    const newUserMessage = { role: "user", text: msgContent };
+    // Only add to history if it's not an initial internal message already added
+    if (!isInitial) {
+      setChatHistory((prevHistory) => [...prevHistory, newUserMessage]);
+    }
     setMessage('');
 
     const botResponseText = await callGeminiAPI(newUserMessage.text, model); // Pass the selected model
     setChatHistory((prevHistory) => [...prevHistory, { role: "model", text: botResponseText }]);
   }, [message, chatHistory, callGeminiAPI, setChatHistory, setMessage, model]); // Added model to dependencies
 
-  const handleSummarizeConversation = useCallback(async () => {
+  const handleSummarizeConversation = useCallback(async () => { // Made async for consistency with mockAIResponse
     if (chatHistory.length === 0) {
       setChatHistory((prevHistory) => [...prevHistory, { role: "model", text: "No conversation to summarize." }]);
       return;
     }
     setChatHistory((prevHistory) => [...prevHistory, { role: "user", text: "Please summarize our conversation." }]);
-    const summary = await callGeminiAPI("", model, true); // Trigger summary with true flag
+    const summary = await callGeminiAPI("Please summarize the entire conversation concisely.", model, true); // Pass true for summarization
     setChatHistory((prevHistory) => [...prevHistory, { role: "model", text: summary }]);
-  }, [chatHistory, setChatHistory, callGeminiAPI, model]); // Added model to dependencies
+  }, [chatHistory, setChatHistory, callGeminiAPI, model]);
+
+  const handleDeepResearch = useCallback(async () => {
+    const topic = message.trim();
+    if (topic === '') {
+      setChatHistory((prevHistory) => [...prevHistory, { role: "model", text: "Please type a topic in the input field before clicking 'Market Research'." }]);
+      return;
+    }
+
+    setChatHistory((prevHistory) => [...prevHistory, { role: "user", text: `Market Research: "${topic}"` }]);
+    setMessage(''); // Clear input after sending the request
+    const researchResult = await callGeminiAPI(topic, model, false, true); // Trigger deep research, pass model, set isDeepResearch to true
+    setChatHistory((prevHistory) => [...prevHistory, { role: "model", text: researchResult }]);
+  }, [message, chatHistory, setChatHistory, setMessage, callGeminiAPI, model]);
 
   const handleCopyToClipboard = useCallback(() => {
     const lastBotMessage = chatHistory.slice().reverse().find(msg => msg.role === 'model');
@@ -1153,8 +1151,8 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
       if (message.trim() !== '') {
         handleSendMessage();
       } else {
-        // You can add a different action here if Enter is pressed on empty input
-        // For now, it.just prevents a newline in the textarea.
+        // You can add a different action here if Enter is pressed on empty input.
+        // For now, it just prevents a newline in the textarea.
       }
     }
   }, [message, handleSendMessage]);
@@ -1177,17 +1175,7 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
     setChatHistory((prevHistory) => [...prevHistory, { role: "model", text: ideas }]);
   }, [message, chatHistory, setChatHistory, setMessage, callGeminiAPI, model]); // Added model to dependencies
 
-  const handlePlusClick = async () => {
-    const currentMessage = message.trim();
-    if (currentMessage !== '') {
-      const newUserMessage = { role: "user", text: currentMessage };
-      setChatHistory((prevHistory) => [...prevHistory, newUserMessage]);
-      setMessage(''); // Clear input immediately
-
-      // Call mock response for this message
-      const botResponseText = await callGeminiAPI(currentMessage, model); // Pass model
-      setChatHistory((prevHistory) => [...prevHistory, { role: "model", text: botResponseText }]);
-    }
+  const handlePlusClick = () => {
     // Only trigger file input if it's not minimal mode, as it's less relevant without direct AI interaction for file content
     if (!isMinimalMode) {
       fileInputRef.current.click();
@@ -1201,15 +1189,23 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
     const files = event.target.files;
     if (files.length > 0) {
       console.log("Selected file:", files[0].name);
+      setSelectedFileName(files[0].name); // Set the selected file name
       // You can add further logic here to handle the selected file,
       // e.g., display its name, or process its content without an AI API.
       setChatHistory((prevHistory) => [...prevHistory, { role: "user", text: `File selected: ${files[0].name} (File handling is local, not sent to AI)` }]);
     }
+    event.target.value = null; // Clear the input so same file can be selected again
   };
+
+  const handleClearSelectedFile = useCallback(() => {
+      setSelectedFileName(null);
+  }, []);
 
   // Determine font size class based on model name length
   const getModelFontSizeClass = (modelName) => {
-    const length = modelName.length;
+    // Ensure modelName is a string before trying to access .length
+    const safeModelName = String(modelName || ''); // Convert to string, default to empty string if null/undefined
+    const length = safeModelName.length;
     if (length <= 14) { // Adjusted to fit "gemini-2.0-flash"
       return 'text-sm';
     } else if (length <= 20) {
@@ -1221,7 +1217,8 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
   const modelFontSizeClass = getModelFontSizeClass(model); // Now uses the state `model`
 
   // Conditional minHeight for the textarea
-  const textareaMinHeight = isMinimalMode ? '64px' : '32px'; // Increased to 64px (h-16) when minimal
+  const textareaMinHeightPx = isMinimalMode ? 64 : 32;
+  const textareaMinHeight = `${textareaMinHeightPx}px`;
 
   return (
     <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} ${isMinimalMode ? '' : 'relative'}`}> {/* Conditional relative positioning */}
@@ -1233,18 +1230,32 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
           >
             <Trash2 className="w-4 h-4" />
           </button>
+          <button
+            onClick={handleSummarizeConversation}
+            disabled={isLoading || chatHistory.length === 0}
+            className={`${themeClasses.buttonSecondaryBg} ${themeClasses.buttonSecondaryHoverBg} ${themeClasses.textPrimary} w-8 h-8 p-0 rounded-lg font-semibold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center`}
+          >
+            <FileText className="w-4 h-4" />
+          </button>
+          <button
+            onClick={handleCopyToClipboard}
+            disabled={isLoading || chatHistory.length === 0}
+            className={`${themeClasses.buttonSecondaryBg} ${themeClasses.buttonSecondaryHoverBg} ${themeClasses.textPrimary} w-8 h-8 p-0 rounded-lg font-semibold transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center`}
+          >
+            <ClipboardCopy className="w-4 h-4" />
+          </button>
         </div>
       )}
 
-      {!isMinimalMode && ( // Hide chat history in minimal mode
-        <div className={`flex-1 overflow-y-auto pr-2 space-y-3 text-sm pb-[100px] ${themeClasses.textPrimary} hide-scrollbar-vertical`}>
+      {/* Chat History Container */}
+      <div className={`flex-1 overflow-y-auto pr-2 space-y-3 text-sm pb-[100px] ${themeClasses.textPrimary} hide-scrollbar-vertical`}>
           {chatHistory.map((msg, index) => (
             <div
               key={index}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[70%] p-3 rounded-lg ${
+                className={`max-w-[85%] p-3 rounded-lg ${
                   msg.role === 'user'
                     ? themeClasses.accentBg + ' ' + themeClasses.accentText
                     : themeClasses.cardBg + ' ' + themeClasses.textPrimary
@@ -1256,50 +1267,68 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className={`max-w-[70%] p-3 rounded-lg ${themeClasses.cardBg} ${themeClasses.textPrimary}`}>
+              <div className={`max-w-[85%] p-3 rounded-lg ${themeClasses.cardBg} ${themeClasses.textPrimary}`}>
                 <div className="dot-flashing"></div>
               </div>
             </div>
           )}
+          <div ref={chatEndRef} /> {/* For auto-scrolling */}
         </div>
-      )}
+
 
       {/* Input area container */}
       <div className={`
         ${isMinimalMode ? 'w-full' : 'absolute bottom-0 left-0 right-0'}
         py-4 px-4 ${themeClasses.appBg} flex flex-col items-center z-10
-      `}>
+      `}
+      style={{ '--textarea-min-height': `${textareaMinHeightPx}px` }} // Define CSS variable
+      >
+        {/* Display selected file name */}
+        {selectedFileName && (
+            <div className={`flex items-center self-start mb-2 px-3 py-1 rounded-full ${themeClasses.cardBg} text-sm ${themeClasses.textSecondary} shadow-md`}>
+                <FileText className="w-4 h-4 mr-2" />
+                <span>{selectedFileName}</span>
+                <button onClick={handleClearSelectedFile} className={`ml-2 ${themeClasses.textTertiary} hover:text-white`}>
+                    <X className="w-4 h-4" />
+                </button>
+            </div>
+        )}
+
         {/* New input area and buttons */}
-        <div className="flex items-center w-full relative">
+        <div className="flex items-end w-full relative"> {/* Changed items-center to items-end for alignment */}
           {!isMinimalMode && ( // Hide Generate Ideas button in minimal mode
             <button
                 onClick={handleGenerateIdeas}
                 disabled={isLoading}
-                className={`bg-gradient-to-br from-blue-400 to-purple-600 text-white w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mr-2`}
+                className={`bg-gradient-to-br from-blue-400 to-purple-600 text-white w-8 min-h-[var(--textarea-min-height)] rounded-full flex-shrink-0 flex items-center justify-center transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed mr-2`}
                 title="Generate Ideas"
+                style={{height: 'var(--textarea-current-height, var(--textarea-min-height))'}} /* Dynamic height */
               >
-                <Sparkles className="w-4 h-4 text-white" /> {/* Added text-white here */}
+                <Sparkles className="w-4 h-4" /> {/* Added text-white here */}
             </button>
           )}
           <textarea
-            className={`flex-grow px-4 py-2 ${isMinimalMode ? 'rounded-[5px]' : 'rounded-full'} ${themeClasses.cardBg}/60 ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')} focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden text-base backdrop-blur-sm backdrop-brightness-75 border ${themeClasses.borderColor} text-left`}
+            className={`flex-grow px-4 py-2 ${isMinimalMode ? 'rounded-[5px]' : 'rounded-full'} bg-transparent ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')} focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden text-base border ${themeClasses.borderColor} text-left`}
             rows="1"
-            placeholder="Type here..."
+            placeholder="Type Here..."
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
               e.target.style.height = 'auto';
               e.target.style.height = e.target.scrollHeight + 'px';
+              // Update CSS variable for dynamic button height
+              e.target.closest('.flex-col').style.setProperty('--textarea-current-height', `${e.target.scrollHeight}px`);
             }}
             onKeyDown={handleKeyDown}
-            style={{ minHeight: textareaMinHeight, maxHeight: '120px' }} // Apply conditional minHeight
+            style={{ minHeight: textareaMinHeight, maxHeight: '120px' }}
           />
           {!isMinimalMode && ( // Hide Send button in minimal mode
             <button
                 onClick={handleSendMessage}
                 disabled={isLoading}
-                className={`${themeClasses.accentBg} ${themeClasses.accentText} w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ml-2`}
+                className={`${themeClasses.accentBg} ${themeClasses.accentText} w-8 min-h-[var(--textarea-min-height)] rounded-full flex-shrink-0 flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ml-2`}
                 title="Send Message"
+                style={{height: 'var(--textarea-current-height, var(--textarea-min-height))'}} /* Dynamic height */
               >
                 <Send className="w-4 h-4" />
               </button>
@@ -1308,13 +1337,14 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
 
         {/* Model selection dropdown and Canvas button, aligned below the input box */}
         <div className="flex justify-between items-center w-full mt-2">
-          {/* Group for Plus and Canvas buttons */}
+          {/* Group for Plus and Market Research buttons */}
           <div className="flex items-center space-x-2">
             {/* Plus button for file input */}
             <button
-              className={`flex items-center justify-center w-8 h-8 rounded-full ${themeClasses.cardBg}/60 ${themeClasses.textSecondary} ${themeClasses.buttonSecondaryHoverBg} transition-colors shadow-lg backdrop-blur-md backdrop-brightness-75 border ${themeClasses.borderColor}`}
+              className={`flex items-center justify-center w-8 min-h-[var(--textarea-min-height)] rounded-full ${themeClasses.cardBg}/60 ${themeClasses.textSecondary} ${themeClasses.buttonSecondaryHoverBg} transition-colors shadow-lg backdrop-blur-md backdrop-brightness-75 border ${themeClasses.borderColor}`}
               onClick={handlePlusClick}
               title="Attach File / Submit Prompt"
+              style={{height: 'var(--textarea-current-height, var(--textarea-min-height))'}} /* Dynamic height */
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -1326,23 +1356,27 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
               className="hidden"
             />
 
-            {!isMinimalMode && ( // Hide Canvas button in minimal mode (it's already open)
-              <button
-                className={`relative w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200
-                           ${themeClasses.cardBg}/60 shadow-lg backdrop-blur-md backdrop-brightness-75 border ${themeClasses.borderColor}`}
-                title="Canvas"
-                onClick={() => onOpenCodingCanvas(message)}
-              >
-                <GradientLayoutDashboardIcon className="w-5 h-5" />
-              </button>
-            )}
+            {/* Market Research Button */}
+            <button
+              onClick={handleDeepResearch}
+              disabled={isLoading}
+              className={`px-4 py-2 rounded-full text-sm font-medium
+                         bg-gradient-to-r from-purple-500 to-pink-500 text-white
+                         hover:from-purple-600 hover:to-pink-600 transition-colors duration-200
+                         disabled:opacity-50 disabled:cursor-not-allowed
+                         flex items-center justify-center text-center
+              `}
+              title="Perform Market Research"
+            >
+              Market Research
+            </button>
           </div>
 
           <div className="relative">
             <select
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className={`${themeClasses.buttonSecondaryBg} ${themeClasses.textPrimary} rounded-full pl-2 pr-6 py-0.5 ${modelFontSizeClass} appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500`}
+              className={`${themeClasses.buttonSecondaryBg} ${themeClasses.textPrimary} rounded-full pl-2 pr-6 py-0.5 ${getModelFontSizeClass(model)} appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500`}
             >
               <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
               <option value="gemini-pro">Gemini Pro</option>
@@ -1439,8 +1473,13 @@ const App = () => {
   const [toasts, setToasts] = useState([]); // State for managing toast notifications
   const nextToastId = useRef(0);
   const [theme, setTheme] = useState('night'); // State for current theme
-  const [isCodingCanvasOpen, setIsCodingCanvasOpen] = useState(false); // New state for coding canvas
   const [codePromptForCanvas, setCodePromptForCanvas] = useState(''); // New state to pass prompt to canvas
+
+  // New state for code on canvas and the natural language prompt
+  const [canvasCode, setCanvasCode] = useState(`console.log("Hello, world!");\n\n// Describe the code you want to generate in the box below.`);
+  const [naturalLangPrompt, setNaturalLangPrompt] = useState('');
+  const naturalLangPromptRef = useRef(null); // Ref for the natural language prompt textarea
+
 
   const themeClasses = getThemeClasses(theme);
 
@@ -1448,23 +1487,63 @@ const App = () => {
   // Handler for sidebar item clicks
   const handleSidebarItemClick = (id) => {
     setActiveSidebarItem(id);
-    setIsCodingCanvasOpen(false); // Close coding canvas if another main tab is clicked
-    setCodePromptForCanvas(''); // Clear prompt when switching tabs
+    setCodePromptForCanvas(''); // Clear prompt when switching tabs, unless it's explicitly to a coding task
   };
 
   const handleOpenCodingCanvas = useCallback((prompt) => {
     setCodePromptForCanvas(prompt); // Set the prompt from the chatbot
-    setIsCodingCanvasOpen(true);
-    // When opening the canvas, we generally want to stay on the current content area, not navigate away.
-    // So, no change to activeSidebarItem here.
+    setActiveSidebarItem('tools'); // Navigate to the Tools tab
   }, []);
 
-  const handleCloseCodingCanvas = useCallback(() => {
-    setIsCodingCanvasOpen(false);
-    setCodePromptForCanvas(''); // Clear prompt when canvas is closed
-    // No need to set activeSidebarItem back to workspace explicitly, it should stay whatever it was.
-  }, []);
+  const handleGenerateCodeFromPrompt = (prompt) => {
+    // Mock AI response for code generation
+    let generatedCode = '';
+    const lowerPrompt = prompt.toLowerCase();
 
+    if (lowerPrompt.includes("javascript") && lowerPrompt.includes("counter")) {
+        generatedCode = `let count = 0;
+function increment() {
+    count++;
+    console.log("Count:", count);
+}
+// Call increment() to test
+increment();
+increment();`;
+    } else if (lowerPrompt.includes("html") && lowerPrompt.includes("button")) {
+        generatedCode = `<!DOCTYPE html>
+<html>
+<head>
+<title>My Page</title>
+<style>
+  body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background-color: #f0f0f0; }
+  button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+</style>
+</head>
+<body>
+  <button onclick="alert('Button clicked!')">Click Me</button>
+</html>`;
+    } else if (lowerPrompt.includes("css") && lowerPrompt.includes("red button")) {
+        generatedCode = `/* Apply this CSS to an HTML button */
+button {
+  background-color: #ff0000;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+}
+button:hover {
+  background-color: #cc0000;
+}`;
+    }
+    else {
+        generatedCode = `// AI could not generate code for: "${prompt}"
+// Please try a different prompt or be more specific.`;
+    }
+    setCanvasCode(generatedCode); // Update the code on the canvas
+    setNaturalLangPrompt(''); // Clear the input after generating
+  };
 
   const addToast = useCallback(({ message, type = 'info' }) => {
     const id = nextToastId.current++;
@@ -1474,6 +1553,17 @@ const App = () => {
   const dismissToast = useCallback((id) => {
     setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
   }, []);
+
+  // New useCallback for handling key down in the natural language prompt
+  const handleNaturalLangPromptKeyDown = useCallback((e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Prevent new line in textarea
+      if (naturalLangPrompt.trim() !== '') {
+        handleGenerateCodeFromPrompt(naturalLangPrompt);
+      }
+    }
+  }, [naturalLangPrompt, handleGenerateCodeFromPrompt]);
+
 
   return (
     <div className={`flex w-full h-screen ${themeClasses.appBg}`}>
@@ -1503,61 +1593,97 @@ const App = () => {
        {/* Sidebar component */}
        <AISidebar activeItem={activeSidebarItem} onSidebarItemClick={handleSidebarItemClick} themeClasses={themeClasses} />
 
-       {/* Main content area wrapper - This div will manage the layout of the main UI and the sliding canvas */}
-       <div className="flex flex-grow relative overflow-hidden">
-         {/* Left Section (30%) - Always shows something */}
-         <div
-           className={`flex flex-col h-full transition-all duration-300 ease-out flex-shrink-0`}
-           style={{
-             flexBasis: isCodingCanvasOpen ? '30%' : '100%',
-             maxWidth: isCodingCanvasOpen ? '30%' : '100%',
-           }}
-         >
-           <main className={`flex-grow p-4 ${themeClasses.textPrimary} flex flex-col overflow-y-auto`}>
-             {isCodingCanvasOpen ? (
-               // In minimal mode, only display the stripped-down ChatbotInterface
-               <div className="h-full flex flex-col justify-end pt-100"> {/* Pushes the input to the bottom */}
-                 <ChatbotInterface
-                   themeClasses={themeClasses}
-                   onOpenCodingCanvas={handleOpenCodingCanvas}
-                   isMinimalMode={true}
-                 />
-               </div>
-             ) : (
-               // In normal mode, display the active section content
-               <>
-                 {activeSidebarItem === 'funding' ? (
-                   <FundingSection themeClasses={themeClasses} />
-                 ) : activeSidebarItem === 'resources' ? (
-                   <ResourcesSection themeClasses={themeClasses} />
-                 ) : activeSidebarItem === 'community' ? (
-                   <CommunitySection themeClasses={themeClasses} />
-                 ) : activeSidebarItem === 'workspace' ? (
-                   <WorkspaceSection themeClasses={themeClasses} onOpenCodingCanvas={handleOpenCodingCanvas} />
-                 ) : activeSidebarItem === 'tools' ? (
-                   <ToolsSection addToast={addToast} themeClasses={themeClasses} />
-                 ) : activeSidebarItem === 'settings' ? (
-                   <SettingsSection themeClasses={themeClasses} theme={theme} setTheme={setTheme} />
-                 ) : (
-                   <div className="flex flex-col items-center justify-center h-full">
-                     <h2 className={`text-xl ${themeClasses.textPrimary}`}>Select an option from the sidebar.</h2>
-                   </div>
-                 )}
-               </>
-             )}
-           </main>
-         </div>
+       {/* Main content area wrapper - now conditionally applies width */}
+       <main className={`p-4 ${themeClasses.textPrimary} flex flex-col overflow-y-auto flex-grow`}>
+           {activeSidebarItem === 'funding' ? (
+             <FundingSection themeClasses={themeClasses} />
+           ) : activeSidebarItem === 'resources' ? (
+             <ResourcesSection themeClasses={themeClasses} />
+           ) : activeSidebarItem === 'community' ? (
+             <CommunitySection themeClasses={themeClasses} />
+           ) : activeSidebarItem === 'workspace' ? (
+             <WorkspaceSection themeClasses={themeClasses} onOpenCodingCanvas={handleOpenCodingCanvas} />
+           ) : activeSidebarItem === 'tools' ? (
+             // Tools tab: Natural Language Prompt input takes 30% on the left, CodingCanvasSection takes 70% on the right
+             <div className="flex h-full space-x-4">
+                 {/* Left Column: Natural Language Prompt Input */}
+                 <div className={`w-[30%] flex-shrink-0 flex flex-col relative`}>
+                     {/* Redesigned input box for natural language prompt */}
+                     <div className={`
+                       absolute bottom-4 left-4 right-4 flex items-end w-auto rounded-2xl p-2
+                       ${themeClasses.appBg} border ${themeClasses.borderColor}
+                     `}>
+                       {/* Plus Button */}
+                       <button
+                         className={`flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 mr-2
+                                     ${themeClasses.textSecondary} border ${themeClasses.borderColor}
+                                     hover:bg-gray-700 transition-colors
+                         `}
+                         onClick={() => { /* Handle file input for tools if needed */ }}
+                         title="Attach File"
+                       >
+                         <Plus className="w-5 h-5" />
+                       </button>
+                       <textarea
+                         ref={naturalLangPromptRef} // Assign the ref here
+                         value={naturalLangPrompt}
+                         onChange={(e) => {
+                           setNaturalLangPrompt(e.target.value);
+                           e.target.style.height = 'auto';
+                           e.target.style.height = e.target.scrollHeight + 'px';
+                         }}
+                         onKeyDown={handleNaturalLangPromptKeyDown}
+                         placeholder="Type Here..."
+                         className={`flex-grow font-sans text-lg bg-transparent outline-none resize-none overflow-hidden
+                                     ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')}
+                                     text-left
+                         `}
+                         rows="1"
+                         style={{ minHeight: '150px', maxHeight: '300px', padding: '0', border: 'none', background: 'transparent' }}
+                       />
+                       {/* Tool Button */}
+                       <button
+                         onClick={() => alert("Tool button clicked!")} // Placeholder functionality
+                         className={`flex-shrink-0 px-5 py-2 rounded-full font-semibold text-sm
+                                     bg-transparent text-white
+                                     hover:${themeClasses.cardBg.replace('bg-', 'bg-')} transition-colors duration-200
+                                     border border-${themeClasses.borderColor.replace('border-', '')}
+                                     disabled:opacity-50 disabled:cursor-not-allowed ml-2 flex items-center justify-center
+                         `}
+                         title="Add Tool"
+                         style={{height: 'var(--textarea-current-height, var(--textarea-min-height))'}} /* Dynamic height */
+                       >
+                         <Wrench className="w-4 h-4 mr-2" /> Tool
+                       </button>
+                       {/* Send Button */}
+                       <button
+                         onClick={() => handleGenerateCodeFromPrompt(naturalLangPrompt)}
+                         className={`flex-shrink-0 px-5 py-2 rounded-full font-semibold text-sm
+                                     bg-gradient-to-r from-blue-500 to-cyan-500 text-white
+                                     hover:from-blue-600 hover:to-cyan-600 transition-colors duration-200
+                                     disabled:opacity-50 disabled:cursor-not-allowed ml-2
+                         `}
+                         title="Generate Code"
+                       >
+                         Send
+                       </button>
+                     </div>
+                 </div>
 
-         {/* Coding Canvas Panel (70%) */}
-         <div
-           className={`absolute top-0 right-0 h-full w-[70%] ${themeClasses.cardBg} shadow-lg z-20 transform transition-transform duration-300 ease-out`}
-           style={{
-             transform: isCodingCanvasOpen ? 'translateX(0)' : 'translateX(100%)',
-           }}
-         >
-           {isCodingCanvasOpen && <CodingCanvasSection themeClasses={themeClasses} onClose={handleCloseCodingCanvas} initialCodePrompt={codePromptForCanvas} />}
-         </div>
-       </div>
+                 {/* Right Column: Coding Canvas Section */}
+                 <div className="w-[70%] h-full flex flex-col">
+                     <CodingCanvasSection key="coding-canvas-section" themeClasses={themeClasses}
+                                          code={canvasCode} setCode={setCanvasCode} />
+                 </div>
+             </div>
+           ) : activeSidebarItem === 'settings' ? (
+             <SettingsSection themeClasses={themeClasses} theme={theme} setTheme={setTheme} />
+           ) : (
+             <div className="flex flex-col items-center justify-center h-full">
+               <h2 className={`text-xl ${themeClasses.textPrimary}`}>Select an option from the sidebar.</h2>
+             </div>
+           )}
+         </main>
 
        {/* Toast Notifications Container */}
        <div className="fixed top-0 right-0 p-4 space-y-2 z-50">
