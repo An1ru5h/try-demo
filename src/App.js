@@ -616,39 +616,172 @@ const processToolData = (data) => {
       // Manual detailed info for the first few tools.
       // This would ideally come from a more robust data source or API.
       const toolDetails = {};
+      let mockCodeSnippet = `// Code for ${tool.name} tool.\n// This is a placeholder. Integrate actual API calls here.\nconsole.log("Using ${tool.name} tool functionality.");`;
+
       if (tool.name.includes("OpenAI API")) {
         toolDetails.whatItIs = "A comprehensive platform providing access to OpenAI's advanced AI models like GPT-4, DALL·E, and Whisper.";
         toolDetails.functions = "Text generation, image creation, code generation, content summarization, translation, conversational AI, and data extraction.";
         toolDetails.differences = "Offers pre-trained models, customizable via fine-tuning, simple API interface, scalable infrastructure, and advanced function calling for structured outputs. Known for ease of use and versatility compared to building models from scratch.";
+        mockCodeSnippet = `// OpenAI API Integration
+const openaiApiKey = "YOUR_OPENAI_API_KEY"; // Replace with your actual key
+async function callOpenAI(promptText) {
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": \`Bearer \${openaiApiKey}\`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo", // Or another model like "gpt-4"
+        messages: [{ role: "user", content: promptText }]
+      })
+    });
+    const data = await response.json();
+    console.log("OpenAI Response:", data.choices[0].message.content);
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error("Error calling OpenAI API:", error);
+    return "Error: Could not get response from OpenAI.";
+  }
+}`;
       } else if (tool.name.includes("ChatGPT")) {
         toolDetails.whatItIs = "An advanced conversational AI model developed by OpenAI, based on the GPT architecture.";
         toolDetails.functions = "Engaging in human-like conversations, answering questions, generating creative content, writing code, summarizing texts, and assisting with various writing tasks.";
         toolDetails.differences = "Designed specifically for conversational interaction, offering a highly natural and fluent user experience. While it uses the OpenAI API internally, it's presented as an end-user application for direct interaction.";
+        mockCodeSnippet = `// ChatGPT Interaction (simulated)
+function sendChatMessage(message) {
+  console.log("Sending message to ChatGPT:", message);
+  // In a real app, this would involve a backend call or direct API integration.
+  setTimeout(() => {
+    console.log("ChatGPT responded: 'That's an interesting query! How else can I help?'");
+  }, 1500);
+}`;
       }
       else if (tool.name.includes("Anthropic Claude API")) {
         toolDetails.whatItIs = "An AI language model developed by Anthropic, focusing on safety and steerability.";
         toolDetails.functions = "Processing and generating human-like text, advanced reasoning, vision analysis (interpreting visual data), code generation, and multilingual processing. Used in customer service and content creation.";
         toolDetails.differences = "Emphasizes safety and responsible AI development. Its Claude 3 Opus model excels in complex tasks, showing high fluency and human-like understanding. Features like 'extended thinking' and citations for verifiable outputs differentiate it.";
+        mockCodeSnippet = `// Anthropic Claude API Integration
+const claudeApiKey = "YOUR_CLAUDE_API_KEY"; // Replace with your actual key
+async function callClaude(promptText) {
+  try {
+    // This is a simplified mock. Actual Claude API might differ.
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": claudeApiKey,
+        "anthropic-version": "2023-06-01"
+      },
+      body: JSON.stringify({
+        model: "claude-3-opus-20240229",
+        max_tokens: 1024,
+        messages: [{ role: "user", content: promptText }]
+      })
+    });
+    const data = await response.json();
+    console.log("Claude Response:", data.content[0].text);
+    return data.content[0].text;
+  } catch (error) {
+    console.error("Error calling Claude API:", error);
+    return "Error: Could not get response from Claude.";
+  }
+}`;
       } else if (tool.name.includes("Google Vertex AI")) {
         toolDetails.whatItIs = "Google Cloud's unified machine learning platform for building, deploying, and managing ML models and AI applications.";
         toolDetails.functions = "Training, tuning, and deploying ML models (AutoML or custom code), generative AI app building with Gemini, model monitoring, data preparation, and MLOps tools.";
         toolDetails.differences = "Unifies various AI services into a single platform, providing end-to-end ML lifecycle management. Offers strong support for custom models and seamless integration with Google Cloud services, making it ideal for enterprise-grade projects.";
+        mockCodeSnippet = `// Google Vertex AI Integration (Simplified Client-Side Mock)
+async function predictWithVertexAI(modelName, inputData) {
+  console.log(\`Sending data to Vertex AI model \${modelName}:\`, inputData);
+  // In a real application, this would involve a server-side call to Vertex AI Prediction.
+  return new Promise(resolve => {
+    setTimeout(() => {
+      console.log("Vertex AI Mock Response: Prediction successful.");
+      resolve({ prediction: "Mock Result for " + modelName });
+    }, 2000);
+  });
+}`;
       } else if (tool.name.includes("LangSmith")) {
         toolDetails.whatItIs = "A platform for debugging, testing, evaluating, and monitoring large language model (LLM) applications.";
         toolDetails.functions = "Tracing LLM calls, prompt testing and evaluation, dataset management, experiment tracking, and monitoring LLM application performance in production.";
         toolDetails.differences = "Part of the LangChain ecosystem, providing integrated tools for LLM development. Key differences from alternatives like Arize Phoenix often include its closed-source nature (vs. open-source for some), self-hosting policies, and deep integration with LangChain framework.";
+        mockCodeSnippet = `// LangSmith Integration (Observability Mock)
+function logToLangSmith(eventDetails) {
+  console.log("Logging event to LangSmith:", eventDetails);
+  // In a real application, this would send data to the LangSmith platform.
+}`;
       } else if (tool.name.includes("PromptLayer")) {
         toolDetails.whatItIs = "A platform for prompt management and experimentation for LLMs.";
         toolDetails.functions = "Tracking prompt versions, A/B testing prompts, logging API calls, and collaborating on prompt engineering workflows.";
         toolDetails.differences = "Focuses specifically on prompt management and experimentation, allowing teams to version control, test, and optimize their prompts effectively. It acts as a wrapper for popular LLM APIs to add observability.";
+        mockCodeSnippet = `// PromptLayer Integration (Prompt Management Mock)
+function executePromptLayerPrompt(promptName, variables) {
+  console.log(\`Executing prompt '\${promptName}' with variables:\`, variables);
+  // In a real application, PromptLayer would fetch the prompt template and execute it.
+}`;
       } else if (tool.name.includes("Flowise")) {
         toolDetails.whatItIs = "An open-source, low-code platform for building custom LLM applications and AI agents with a visual drag-and-drop interface.";
         toolDetails.functions = "Connecting various AI models, data sources, APIs, and UI components to create chatbots, virtual assistants, and intelligent automation tools without extensive coding.";
         toolDetails.differences = "Offers rapid prototyping of LLM-powered applications, especially for conversational AI and chatbots. Its visual builder appeals to non-developers and technical users who prefer a node-based interface for chaining LLMs and tools.";
+        mockCodeSnippet = `// Flowise API Endpoint Call (Mock)
+async function callFlowiseEndpoint(flowId, inputData) {
+  console.log(\`Calling Flowise endpoint \${flowId} with:\`, inputData);
+  // This would typically call a deployed Flowise API endpoint.
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve({ response: "Flowise Flow executed successfully with mock data." });
+    }, 1800);
+  });
+}`;
       } else if (tool.name.includes("LangFlow")) {
         toolDetails.whatItIs = "A UI for LangChain, enabling users to visually build and experiment with LLM applications.";
         toolDetails.functions = "Creating and managing complex LLM chains, integrating various components like models, prompts, and tools through a graphical interface, and visualizing the flow of data.";
         toolDetails.differences = "Provides a visual layer over LangChain, making it easier for developers to design, debug, and deploy LLM applications without writing extensive code for chain construction. It offers a more intuitive development experience for LangChain users.";
+        mockCodeSnippet = `// LangFlow Generated Code Snippet (Conceptual)
+// This represents code you'd get from a visual LangFlow export.
+// It would likely involve LangChainJS classes and calls.
+import { ChatOpenAI } from "@langchain/openai";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+
+const model = new ChatOpenAI({ model: "gpt-3.5-turbo" });
+async function runLangFlowChain(userQuery) {
+  const messages = [
+    new SystemMessage("You are an AI assistant powered by a LangFlow chain."),
+    new HumanMessage(userQuery),
+  ];
+  const result = await model.invoke(messages);
+  console.log("LangFlow Chain Result:", result.content);
+  return result.content;
+}`;
+      } else if (tool.name.includes("LangChain")) {
+        toolDetails.whatItIs = "A framework designed to simplify the creation of applications powered by large language models (LLMs).";
+        toolDetails.functions = "Chaining LLMs with external data sources, interacting with APIs, memory management for conversational bots, agent creation, and more.";
+        toolDetails.differences = "Provides a structured, modular approach to building complex LLM applications, abstracting away much of the boilerplate code for integrations and logic flows. It enables developers to combine LLMs with other computational or knowledge sources.";
+        mockCodeSnippet = `// LangChain Integration (Basic Example)
+import { ChatOpenAI } from "@langchain/openai";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
+
+const chat = new ChatOpenAI({
+  apiKey: "YOUR_OPENAI_API_KEY", // Replace with your API key
+  model: "gpt-4", // Or "gpt-3.5-turbo"
+  temperature: 0.7,
+});
+
+async function runLangChainExample(userQuestion) {
+  try {
+    const response = await chat.invoke([
+      new SystemMessage("You are a helpful AI assistant that provides concise answers."),
+      new HumanMessage(userQuestion),
+    ]);
+    console.log("LangChain AI Response:", response.content);
+    return response.content;
+  } catch (error) {
+    console.error("Error running LangChain example:", error);
+    return "Error: LangChain execution failed.";
+  }
+}`;
       }
       else {
         // Default details for other tools or placeholder
@@ -657,21 +790,22 @@ const processToolData = (data) => {
         toolDetails.differences = "Often distinguishes itself through unique features, target audience, or underlying technology compared to competitors.";
       }
 
-
       if (tool.name.includes('/')) {
         const names = tool.name.split('/').map(name => name.trim());
         names.forEach(singleName => {
           newToolData[category].push({
             name: singleName,
             description: tool.description,
-            details: toolDetails // Assign the same details to split tools for simplicity
+            details: toolDetails, // Assign the same details to split tools for simplicity
+            codeSnippet: mockCodeSnippet // Add the mock code snippet
           });
         });
       } else {
         newToolData[category].push({
           name: tool.name,
           description: tool.description,
-          details: toolDetails // Assign details here
+          details: toolDetails, // Assign details here
+          codeSnippet: mockCodeSnippet // Add the mock code snippet
         });
       }
     });
@@ -682,129 +816,201 @@ const processToolData = (data) => {
 // Process the tool data once when the component loads
 const processedToolData = processToolData(originalToolData);
 
+// DraggableToolMenu component
+const DraggableToolMenu = ({ isOpen, onClose, toolsData, themeClasses }) => {
+  const [position, setPosition] = useState({ x: 50, y: 50 }); // Initial position
+  const [isDragging, setIsDragging] = useState(false);
+  const offset = useRef({ x: 0, y: 0 });
+  const menuRef = useRef(null);
 
-// ToolsSection Component - Now displays categorized AI tools using a dropdown
-const ToolsSection = ({ addToast, themeClasses, canvasCode, setCanvasCode, naturalLangPrompt, setNaturalLangPrompt, handleGenerateCodeFromPrompt, naturalLangPromptRef }) => { // Receive new props
-  const [selectedCategory, setSelectedCategory] = useState('All Categories');
-  const [addedTools, setAddedTools] = useState({}); // State to track added tools, corrected initialization
-  const [searchTerm, setSearchTerm] = useState(''); // New state for search term
-
-
-  // Filtered tools based on selected category and search term
-  const filteredCategories = Object.entries(processedToolData)
-    .filter(([categoryName]) =>
-      selectedCategory === 'All Categories' || categoryName === selectedCategory
-    )
-    .map(([categoryName, toolsArray]) => {
-      const filteredTools = toolsArray.filter(tool =>
-        tool.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tool.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      return [categoryName, filteredTools];
-    })
-    .filter(([, toolsArray]) => toolsArray.length > 0); // Only show categories with matching tools
-
-
-  const handleAddTool = (toolName) => {
-    if (addedTools[toolName]) {
-      addToast({ message: `${toolName} is already connected!`, type: 'info' });
-      return;
+  const handleMouseDown = useCallback((e) => {
+    // Only allow drag if clicking on the header, not content
+    if (e.target.closest('.draggable-handle') || e.target.classList.contains('draggable-handle')) {
+      setIsDragging(true);
+      if (menuRef.current) {
+        offset.current = {
+          x: e.clientX - menuRef.current.getBoundingClientRect().left,
+          y: e.clientY - menuRef.current.getBoundingClientRect().top,
+        };
+      }
     }
-    setAddedTools(prev => ({ ...prev, [toolName]: true }));
-    addToast({ message: `${toolName} connected!`, type: 'success' });
-  };
+  }, []);
 
-  const handleRemoveTool = (toolName) => {
-    if (!addedTools[toolName]) {
-      addToast({ message: `${toolName} is not in your project.`, type: 'info' });
-      return;
-    }
-    setAddedTools(prev => {
-      const newState = { ...prev };
-      delete newState[toolName];
-      return newState;
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging) return;
+    setPosition({
+      x: e.clientX - offset.current.x,
+      y: e.clientY - offset.current.y,
     });
-    addToast({ message: `${toolName} removed from project.`, type: 'error' }); // Changed type to error for removal
-  };
+  }, [isDragging]);
 
-  const handleViewDocs = (toolName) => {
-    addToast({ message: `Viewing documentation for ${toolName}...`, type: 'info' });
-    // In a real app, you would navigate to documentation or open a modal
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  if (!isOpen) return null;
+
+  const handleDragStart = (e, tool) => {
+    // Set data for drag and drop: type, name, and code snippet
+    e.dataTransfer.setData('text/plain', JSON.stringify({
+      type: 'tool',
+      name: tool.name,
+      codeSnippet: tool.codeSnippet
+    }));
+    e.dataTransfer.effectAllowed = 'copy'; // Indicate that a copy operation is allowed
   };
 
 
   return (
-    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} p-5`}>
-      {/* Search and Dropdown for filtering categories */}
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-4 space-y-3 sm:space-y-0 sm:space-x-4">
-        <div className="relative flex-grow w-full sm:w-auto">
-          <input
-            type="text"
-            placeholder="Search tools..."
-            className={`pl-8 pr-3 py-1.5 rounded-md ${themeClasses.cardBg} ${themeClasses.borderColor} border ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')} focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 ${themeClasses.textTertiary}`} />
-        </div>
-
-        {/* Category Dropdown */}
-        <div className="relative w-full sm:w-auto">
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className={`w-full py-1.5 px-3 pr-7 rounded-md ${themeClasses.cardBg} ${themeClasses.borderColor} border ${themeClasses.textPrimary} text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500`}
-          >
-            <option value="All Categories">All Categories</option>
-            {Object.keys(processedToolData).map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-400">
-            <ChevronDown className="h-3 w-3" />
-          </div>
-        </div>
+    <div
+      ref={menuRef}
+      className={`fixed z-50 rounded-lg shadow-2xl overflow-hidden
+                  ${themeClasses.cardBg} border ${themeClasses.borderColor}
+                  flex flex-col resize overflow-auto`} /* Added resize and overflow-auto */
+      style={{ left: position.x, top: position.y, minWidth: '300px', minHeight: '200px', width: '350px', height: '400px' }}
+    >
+      {/* Draggable Header */}
+      <div
+        className={`draggable-handle flex items-center justify-between p-3 cursor-grab
+                    ${themeClasses.sidebarBg} ${themeClasses.textPrimary} text-lg font-semibold border-b ${themeClasses.borderColor}`}
+        onMouseDown={handleMouseDown}
+      >
+        <span>Tool Menu</span>
+        <button onClick={onClose} className="p-1 rounded-full hover:bg-gray-600 transition-colors">
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
-      <ScrollArea className="flex-grow">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {filteredCategories.length > 0 ? (
-            filteredCategories.map(([categoryName, toolsArray]) => (
-              <div key={categoryName} className="col-span-full">
-                {selectedCategory === 'All Categories' && (
-                  <h3 className={`font-semibold text-sm ${themeClasses.textPrimary} mb-2 border-b ${themeClasses.borderColor} pb-1.5`}>
-                    {categoryName}
-                  </h3>
-                )}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {toolsArray.map((tool, index) => (
-                    <Card key={index} className="hover:shadow-lg transition-shadow duration-200" themeClasses={themeClasses}>
-                      <CardContent
-                        className="p-4"
-                        onAddTool={handleAddTool}
-                        onTryDemo={handleViewDocs}
-                        onRemoveTool={handleRemoveTool}
-                        toolName={tool.name}
-                        isAdded={addedTools[tool.name]}
-                        details={tool.details} // Pass the new details prop
-                        themeClasses={themeClasses} // Pass themeClasses to CardContent
-                      >
-                        {/* Tool Name is now the primary content */}
-                        <h3 className={`font-bold text-base mb-1.5 ${themeClasses.textPrimary}`}>{tool.name}</h3>
-                        {/* Removed the tool.description paragraph here */}
-                      </CardContent>
-                    </Card>
-                  ))}
+      {/* Tool List */}
+      <div className="flex-1 p-3 custom-scrollbar overflow-y-auto">
+        {Object.entries(toolsData).map(([categoryName, toolsArray]) => (
+          <div key={categoryName} className="mb-4">
+            <h4 className={`text-sm font-semibold ${themeClasses.textPrimary} mb-2 border-b ${themeClasses.borderColor} pb-1`}>
+              {categoryName}
+            </h4>
+            <div className="space-y-2">
+              {toolsArray.map((tool, index) => (
+                <div
+                  key={index}
+                  draggable="true"
+                  onDragStart={(e) => handleDragStart(e, tool)}
+                  className={`p-2 rounded-md ${themeClasses.buttonSecondaryBg} ${themeClasses.textSecondary}
+                              hover:bg-blue-700 hover:text-white transition-colors duration-200 cursor-grab text-sm`}
+                >
+                  {tool.name}
                 </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
+// ToolsSection Component - Now displays the coding canvas and natural language input directly
+const ToolsSection = ({
+  addToast,
+  themeClasses,
+  setIsToolMenuOpen,
+  canvasCode,
+  setCanvasCode,
+  naturalLangPrompt,
+  setNaturalLangPrompt,
+  handleGenerateCodeFromPrompt,
+  naturalLangPromptRef
+}) => {
+  return (
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} p-5`}>
+      {/* Removed the <h2> "Developer Playground" header */}
+
+      {/* Coding Interface - separate flex container below the heading */}
+      <div className="flex flex-row h-full space-x-4 flex-grow">
+          {/* Left Column: Natural Language Prompt Input */}
+          <div className={`w-[30%] flex-shrink-0 flex flex-col relative`}>
+              {/* Redesigned input box for natural language prompt */}
+              <div className={`
+                absolute bottom-4 left-4 right-4 flex items-end w-auto rounded-2xl p-2
+                ${themeClasses.appBg} border ${themeClasses.borderColor}
+              `}>
+                  {/* Plus Button */}
+                  <button
+                    className={`flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 mr-2
+                                ${themeClasses.textSecondary} border ${themeClasses.borderColor}
+                                hover:bg-gray-700 transition-colors
+                    `}
+                    onClick={() => { /* Handle file input for tools if needed */ }}
+                    title="Attach File"
+                  >
+                    <Plus className="w-5 h-5" />
+                  </button>
+                  <textarea
+                    ref={naturalLangPromptRef} // Assign the ref here
+                    value={naturalLangPrompt}
+                    onChange={(e) => {
+                      setNaturalLangPrompt(e.target.value);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = e.target.scrollHeight + 'px';
+                    }}
+                    onKeyDown={handleGenerateCodeFromPrompt}
+                    placeholder="Type Here..."
+                    className={`flex-grow font-sans text-lg bg-transparent outline-none resize-none overflow-hidden
+                                ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')}
+                                text-left
+                    `}
+                    rows="1"
+                    style={{ minHeight: '150px', maxHeight: '300px', padding: '0', border: 'none', background: 'transparent' }}
+                  />
+                  {/* Tool Button - toggles the DraggableToolMenu */}
+                  <button
+                    onClick={() => setIsToolMenuOpen(prev => !prev)}
+                    className={`flex-shrink-0 px-5 py-2 rounded-full font-semibold text-sm
+                                bg-transparent text-white
+                                hover:${themeClasses.cardBg.replace('bg-', 'bg-')} transition-colors duration-200
+                                border border-${themeClasses.borderColor.replace('border-', '')}
+                                disabled:opacity-50 disabled:cursor-not-allowed ml-2 flex items-center justify-center
+                    `}
+                    title="Open Tool Menu"
+                    style={{height: 'var(--textarea-current-height, var(--textarea-min-height))'}} /* Dynamic height */
+                  >
+                    <Wrench className="w-4 h-4 mr-2" /> Tool
+                  </button>
+                  {/* Send Button */}
+                  <button
+                    onClick={() => handleGenerateCodeFromPrompt(naturalLangPrompt)}
+                    className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center
+                                bg-gradient-to-r from-blue-500 to-cyan-500 text-white
+                                hover:from-blue-600 hover:to-cyan-600 transition-colors duration-200
+                                disabled:opacity-50 disabled:cursor-not-allowed ml-2
+                    `}
+                    title="Generate Code"
+                  >
+                    <Send className="w-5 h-5 -rotate-90" /> {/* Upward-facing arrow */}
+                  </button>
               </div>
-            ))
-          ) : (
-            <p className={`${themeClasses.textTertiary} text-center py-4 text-sm col-span-full`}>No tools found matching your criteria.</p>
-          )}
-        </div>
-      </ScrollArea>
+          </div>
+
+          {/* Right Column: Coding Canvas Section */}
+          <div className="w-[70%] h-full flex flex-col">
+              <CodingCanvasSection key="coding-canvas-section" themeClasses={themeClasses}
+                                   code={canvasCode} setCode={setCanvasCode} />
+          </div>
+      </div>
     </div>
   );
 };
@@ -850,6 +1056,7 @@ const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receiv
   const [detectedLanguage, setDetectedLanguage] = useState('javascript'); // New state for detected language
   const [currentView, setCurrentView] = useState('code'); // 'code', 'output'
   const [htmlOutputContent, setHtmlOutputContent] = useState(''); // New state to store HTML string for iframe
+  const codeEditorRef = useRef(null); // Ref for the textarea to manage cursor position
 
 
   // Function to detect the programming language based on code content
@@ -911,7 +1118,7 @@ const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receiv
       } else if (detectedLanguage === 'python') {
         capturedOutput = "Python code detected. Direct execution of Python in the browser is not supported without a backend server or a client-side WebAssembly interpreter (e.g., Pyodide).";
       } else {
-        capturedOutput = `Unsupported language detected: ${detectedLanguage}. This environment currently supports direct execution of JavaScript and rendering of HTML.`;
+        capturedOutput = `Unsupported language detected. This environment currently supports direct execution of JavaScript and rendering of HTML.`;
       }
     } catch (e) {
       setCodeError(e.message);
@@ -925,7 +1132,48 @@ const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receiv
     }
   };
 
-  // Removed handleStopCode as it's no longer explicitly called by a button
+  // Drop handler for code insertion
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData('text/plain');
+    console.log("Dropped data:", data); // Log the received data
+
+    // Add a check to ensure data is not empty before parsing
+    if (!data) {
+      console.error("Dropped data is empty or invalid.");
+      return;
+    }
+
+    try {
+      const { type, name, codeSnippet } = JSON.parse(data);
+      if (type === 'tool' && codeSnippet) {
+        const textarea = codeEditorRef.current;
+        if (!textarea) return;
+
+        const startPos = textarea.selectionStart;
+        const endPos = textarea.selectionEnd;
+        const newCode = code.substring(0, startPos) + codeSnippet + code.substring(endPos, code.length);
+        setCode(newCode);
+
+        // Position cursor after the inserted snippet
+        const newCursorPos = startPos + codeSnippet.length;
+        // Need to wait for React to update the DOM, then set cursor position
+        requestAnimationFrame(() => {
+          textarea.selectionStart = newCursorPos;
+          textarea.selectionEnd = newCursorPos;
+          textarea.focus();
+        });
+      }
+    } catch (error) {
+      console.error("Error parsing dropped data:", error);
+    }
+  }, [code, setCode]);
+
+  // Drag over handler to allow dropping
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault(); // Necessary to allow a drop
+    e.dataTransfer.dropEffect = 'copy'; // Indicate a copy operation
+  }, []);
 
 
   return (
@@ -960,9 +1208,12 @@ const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receiv
         {currentView === 'code' && (
           <div className="w-full h-full flex flex-col bg-gray-900">
             <textarea
+              ref={codeEditorRef} // Assign ref to textarea
               value={code} // Uses prop value
               onChange={(e) => setCode(e.target.value)} // Uses prop setter
-              placeholder="Write your code here..."
+              onDragOver={handleDragOver} // Allow dropping
+              onDrop={handleDrop} // Handle the drop event
+              placeholder="Write your code here or drag a tool snippet..."
               className="flex-grow p-4 font-mono text-sm bg-transparent outline-none resize-none custom-scrollbar"
               style={{ color: themeClasses.textPrimary }}
               spellCheck="false" // Disable browser spell check for code
@@ -1474,6 +1725,7 @@ const App = () => {
   const nextToastId = useRef(0);
   const [theme, setTheme] = useState('night'); // State for current theme
   const [codePromptForCanvas, setCodePromptForCanvas] = useState(''); // New state to pass prompt to canvas
+  const [isToolMenuOpen, setIsToolMenuOpen] = useState(false); // State for the draggable tool menu
 
   // New state for code on canvas and the natural language prompt
   const [canvasCode, setCanvasCode] = useState(`console.log("Hello, world!");\n\n// Describe the code you want to generate in the box below.`);
@@ -1483,21 +1735,21 @@ const App = () => {
 
   const themeClasses = getThemeClasses(theme);
 
-
-  // Handler for sidebar item clicks
-  const handleSidebarItemClick = (id) => {
-    setActiveSidebarItem(id);
-    setCodePromptForCanvas(''); // Clear prompt when switching tabs, unless it's explicitly to a coding task
-  };
-
-  const handleOpenCodingCanvas = useCallback((prompt) => {
-    setCodePromptForCanvas(prompt); // Set the prompt from the chatbot
-    setActiveSidebarItem('tools'); // Navigate to the Tools tab
+  // Moved addToast and dismissToast before functions that use them
+  const addToast = useCallback(({ message, type = 'info' }) => {
+    const id = nextToastId.current++;
+    setToasts((prevToasts) => [...prevToasts, { id, message, type }]);
   }, []);
 
-  const handleGenerateCodeFromPrompt = (prompt) => {
-    // Mock AI response for code generation
+  const dismissToast = useCallback((id) => {
+    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
+  }, []);
+
+
+  // Common function for generating code and explanation, used by both input areas
+  const generateCodeAndExplanation = useCallback(async (prompt) => {
     let generatedCode = '';
+    let explanation = '';
     const lowerPrompt = prompt.toLowerCase();
 
     if (lowerPrompt.includes("javascript") && lowerPrompt.includes("counter")) {
@@ -1509,6 +1761,7 @@ function increment() {
 // Call increment() to test
 increment();
 increment();`;
+        explanation = "I've generated a simple JavaScript counter. It includes a `count` variable and an `increment` function that increases the count and logs it to the console.";
     } else if (lowerPrompt.includes("html") && lowerPrompt.includes("button")) {
         generatedCode = `<!DOCTYPE html>
 <html>
@@ -1522,6 +1775,7 @@ increment();`;
 <body>
   <button onclick="alert('Button clicked!')">Click Me</button>
 </html>`;
+        explanation = "Here's a basic HTML page with a 'Click Me' button. Clicking it will trigger an alert. The button is styled with some basic CSS for centering.";
     } else if (lowerPrompt.includes("css") && lowerPrompt.includes("red button")) {
         generatedCode = `/* Apply this CSS to an HTML button */
 button {
@@ -1536,25 +1790,38 @@ button {
 button:hover {
   background-color: #cc0000;
 }`;
+        explanation = "This CSS code styles a button to be red with white text and a subtle hover effect. You can apply this to an HTML button element.";
     }
     else {
         generatedCode = `// AI could not generate code for: "${prompt}"
 // Please try a different prompt or be more specific.`;
+        explanation = "I couldn't generate specific code for that request. Please try rephrasing or being more precise with your requirements.";
     }
-    setCanvasCode(generatedCode); // Update the code on the canvas
-    setNaturalLangPrompt(''); // Clear the input after generating
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    return { code: generatedCode, explanation: explanation };
+  }, []);
+
+
+  // Handler for sidebar item clicks
+  const handleSidebarItemClick = (id) => {
+    setActiveSidebarItem(id);
+    setCodePromptForCanvas(''); // Clear prompt when switching tabs, unless it's explicitly to a coding task
   };
 
-  const addToast = useCallback(({ message, type = 'info' }) => {
-    const id = nextToastId.current++;
-    setToasts((prevToasts) => [...prevToasts, { id, message, type }]);
+  const handleOpenCodingCanvas = useCallback((prompt) => {
+    setCodePromptForCanvas(prompt); // Set the prompt from the chatbot
+    setActiveSidebarItem('tools'); // Navigate to the Tools tab
   }, []);
 
-  const dismissToast = useCallback((id) => {
-    setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
-  }, []);
+  const handleGenerateCodeFromPrompt = useCallback(async (prompt) => { // Made async to use await for generateCodeAndExplanation
+    if (prompt.trim() === '') return;
+    const { code, explanation } = await generateCodeAndExplanation(prompt);
+    setCanvasCode(code);
+    addToast({ message: `Code generated! ${explanation}`, type: 'success', duration: 5000 });
+  }, [generateCodeAndExplanation, setCanvasCode, addToast]);
 
-  // New useCallback for handling key down in the natural language prompt
+
   const handleNaturalLangPromptKeyDown = useCallback((e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault(); // Prevent new line in textarea
@@ -1604,78 +1871,17 @@ button:hover {
            ) : activeSidebarItem === 'workspace' ? (
              <WorkspaceSection themeClasses={themeClasses} onOpenCodingCanvas={handleOpenCodingCanvas} />
            ) : activeSidebarItem === 'tools' ? (
-             // Tools tab: Natural Language Prompt input takes 30% on the left, CodingCanvasSection takes 70% on the right
-             <div className="flex h-full space-x-4">
-                 {/* Left Column: Natural Language Prompt Input */}
-                 <div className={`w-[30%] flex-shrink-0 flex flex-col relative`}>
-                     {/* Redesigned input box for natural language prompt */}
-                     <div className={`
-                       absolute bottom-4 left-4 right-4 flex items-end w-auto rounded-2xl p-2
-                       ${themeClasses.appBg} border ${themeClasses.borderColor}
-                     `}>
-                       {/* Plus Button */}
-                       <button
-                         className={`flex items-center justify-center w-8 h-8 rounded-full flex-shrink-0 mr-2
-                                     ${themeClasses.textSecondary} border ${themeClasses.borderColor}
-                                     hover:bg-gray-700 transition-colors
-                         `}
-                         onClick={() => { /* Handle file input for tools if needed */ }}
-                         title="Attach File"
-                       >
-                         <Plus className="w-5 h-5" />
-                       </button>
-                       <textarea
-                         ref={naturalLangPromptRef} // Assign the ref here
-                         value={naturalLangPrompt}
-                         onChange={(e) => {
-                           setNaturalLangPrompt(e.target.value);
-                           e.target.style.height = 'auto';
-                           e.target.style.height = e.target.scrollHeight + 'px';
-                         }}
-                         onKeyDown={handleNaturalLangPromptKeyDown}
-                         placeholder="Type Here..."
-                         className={`flex-grow font-sans text-lg bg-transparent outline-none resize-none overflow-hidden
-                                     ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')}
-                                     text-left
-                         `}
-                         rows="1"
-                         style={{ minHeight: '150px', maxHeight: '300px', padding: '0', border: 'none', background: 'transparent' }}
-                       />
-                       {/* Tool Button */}
-                       <button
-                         onClick={() => alert("Tool button clicked!")} // Placeholder functionality
-                         className={`flex-shrink-0 px-5 py-2 rounded-full font-semibold text-sm
-                                     bg-transparent text-white
-                                     hover:${themeClasses.cardBg.replace('bg-', 'bg-')} transition-colors duration-200
-                                     border border-${themeClasses.borderColor.replace('border-', '')}
-                                     disabled:opacity-50 disabled:cursor-not-allowed ml-2 flex items-center justify-center
-                         `}
-                         title="Add Tool"
-                         style={{height: 'var(--textarea-current-height, var(--textarea-min-height))'}} /* Dynamic height */
-                       >
-                         <Wrench className="w-4 h-4 mr-2" /> Tool
-                       </button>
-                       {/* Send Button */}
-                       <button
-                         onClick={() => handleGenerateCodeFromPrompt(naturalLangPrompt)}
-                         className={`flex-shrink-0 px-5 py-2 rounded-full font-semibold text-sm
-                                     bg-gradient-to-r from-blue-500 to-cyan-500 text-white
-                                     hover:from-blue-600 hover:to-cyan-600 transition-colors duration-200
-                                     disabled:opacity-50 disabled:cursor-not-allowed ml-2
-                         `}
-                         title="Generate Code"
-                       >
-                         Send
-                       </button>
-                     </div>
-                 </div>
-
-                 {/* Right Column: Coding Canvas Section */}
-                 <div className="w-[70%] h-full flex flex-col">
-                     <CodingCanvasSection key="coding-canvas-section" themeClasses={themeClasses}
-                                          code={canvasCode} setCode={setCanvasCode} />
-                 </div>
-             </div>
+             // Tools tab: This is the main section for the developer playground
+             <ToolsSection themeClasses={themeClasses}
+                           addToast={addToast}
+                           setIsToolMenuOpen={setIsToolMenuOpen}
+                           canvasCode={canvasCode}
+                           setCanvasCode={setCanvasCode}
+                           naturalLangPrompt={naturalLangPrompt}
+                           setNaturalLangPrompt={setNaturalLangPrompt}
+                           handleGenerateCodeFromPrompt={handleGenerateCodeFromPrompt}
+                           naturalLangPromptRef={naturalLangPromptRef}
+             />
            ) : activeSidebarItem === 'settings' ? (
              <SettingsSection themeClasses={themeClasses} theme={theme} setTheme={setTheme} />
            ) : (
@@ -1691,6 +1897,14 @@ button:hover {
            <Toast key={toast.id} {...toast} onDismiss={dismissToast} />
          ))}
        </div>
+
+       {/* Draggable Tool Menu - Rendered directly by App */}
+       <DraggableToolMenu
+         isOpen={isToolMenuOpen}
+         onClose={() => setIsToolMenuOpen(false)}
+         toolsData={processedToolData}
+         themeClasses={themeClasses}
+       />
     </div>
   )
 }
