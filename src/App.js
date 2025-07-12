@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Bot, Sparkles, DollarSign, Users, BookOpen, Settings, Search, Trash2, ClipboardCopy, FileText, Plus, ChevronDown, Send, Wrench, CheckCircle, XCircle, Book, FolderOpen, Info, Code, X, Square, Cloud, MessageSquareText, Palette, BrainCircuit, Blocks, Play, GitPullRequest, Bug, Languages, Lightbulb, Image, Eye } from 'lucide-react'; // Import Square icon for stop button and new icons
+import { Bot, Sparkles, DollarSign, Users, BookOpen, Settings, Search, Trash2, ClipboardCopy, FileText, Plus, ChevronDown, Send, Wrench, CheckCircle, XCircle, Book, FolderOpen, Info, Code, X, Square, Cloud, MessageSquare, Palette, BrainCircuit, Blocks, Play, HardDrive, Shield, BellRing, GitBranch, LayoutDashboard, UserCog, Database, Zap, BarChart2, Eye, Bug, Image } from 'lucide-react'; // Changed MessageSquareText to MessageSquare
+
 
 /**
  * Note: To use this component, you need to have React and Tailwind CSS set up.
  * You also need to install the lucide-react library:
- * npm npm install lucide-react
+ * npm install lucide-react
  */
 // Custom Gradient LayoutDashboard Icon component
 const GradientLayoutDashboardIcon = ({ className }) => (
@@ -29,11 +30,12 @@ const GradientLayoutDashboardIcon = ({ className }) => (
 // An array of objects to define the navigation links for easier management and rendering.
 const menuItems = [
   { id: 'workspace', icon: Sparkles, label: 'Workspace' },
-  { id: 'tools', icon: Code, label: 'Tools' }, // Changed icon to Code
+  { id: 'tools', icon: Code, label: 'Tools' },
   { id: 'funding', icon: DollarSign, label: 'Funding' },
   { id: 'resources', icon: BookOpen, label: 'Resources' },
   { id: 'community', icon: Users, label: 'Community' },
-  { id: 'settings', icon: Settings, label: 'Settings' }, // Renamed from 'account' to 'settings'
+  { id: 'admin-tab', icon: LayoutDashboard, label: 'Admin' }, // Consolidated Admin Tab
+  { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
 // Helper to get theme-specific classes
@@ -113,8 +115,8 @@ const AISidebar = ({ activeItem, onSidebarItemClick, themeClasses }) => {
                   onClick={(e) => { e.preventDefault(); onSidebarItemClick(item.id); }}
                   className={`${linkBaseClasses} ${activeItem === item.id ? `${themeClasses.accentBg} ${themeClasses.accentText} shadow-lg` : `${themeClasses.cardHoverBg}`}`}
                 >
-                  {/* Corrected: Render item.icon as a component */}
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
+                  {/* Render Lucide React component directly */}
+                  {React.createElement(item.icon, { className: "h-5 w-5 flex-shrink-0" })}
                   <span className="absolute left-[65px] top-1/2 -translate-y-1/2 bg-gray-700 text-white text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap z-10 opacity-0 hover:opacity-100 transition-opacity duration-200 group-hover:opacity-100 pointer-events-none">
                     {item.label}
                   </span>
@@ -258,6 +260,11 @@ const ResourcesSection = ({ themeClasses }) => {
     { title: 'Upcoming Startup Webinars', description: 'Online events for founders', tags: ['Events'] },
     { title: 'Legal & IP Guide', description: 'Understanding intellectual property and legal structures for startups', tags: ['Guides', 'Legal'] },
     { title: 'Marketing Strategies', description: 'Digital marketing, content marketing, growth hacking', tags: ['Guides', 'Marketing'] },
+    // New Developer Resources
+    { title: 'API Documentation', description: 'Comprehensive guides for integrating with our platform APIs.', tags: ['Developer', 'API'] },
+    { title: 'SDKs & Libraries', description: 'Download and use our official SDKs for various programming languages.', tags: ['Developer', 'SDK'] },
+    { title: 'Code Snippet Library', description: 'Collection of reusable code snippets for common AI tasks.', tags: ['Developer', 'Code'] },
+    { title: 'Contributing Guidelines', description: 'How to contribute to our open-source projects and community.', tags: ['Developer', 'Community'] },
   ];
 
   const filteredResources = allResources.filter(resource =>
@@ -595,13 +602,11 @@ const originalToolData = {
     { name: "DataRobot / H2O.ai", description: "End-to-end AutoML platforms" },
     { name: "PyCaret", description: "Low-code Python library for ML" },
   ],
-  // "No-Code / Low-Code AI Builders" was removed in the previous turn
   "Natural Language Processing (NLP)": [
     { name: "spaCy / NLTK", description: "Classic NLP libraries" },
     { name: "Hugging Face Transformers", description: "Pretrained LLMs (BERT, T5, etc.)" },
     { name: "Rasa / Dialogflow", description: "Chatbot development frameworks" },
   ],
-  // "Security, Compliance & Ethics" was removed in the previous turn
 };
 
 // Function to process toolData to split names with '/' and add detailed info
@@ -714,7 +719,7 @@ function logToLangSmith(eventDetails) {
   // In a real application, this would send data to the LangSmith platform.
 }`;
       } else if (tool.name.includes("PromptLayer")) {
-        toolDetails.whatItIs = "A platform for prompt management and experimentation for LLMs.";
+        toolDetails.whatItTo = "A platform for prompt management and experimentation for LLMs.";
         toolDetails.functions = "Tracking prompt versions, A/B testing prompts, logging API calls, and collaborating on prompt engineering workflows.";
         toolDetails.differences = "Focuses specifically on prompt management and experimentation, allowing teams to version control, test, and optimize their prompts effectively. It acts as a wrapper for popular LLM APIs to add observability.";
         mockCodeSnippet = `// PromptLayer Integration (Prompt Management Mock)
@@ -934,106 +939,11 @@ const ToolsSection = ({
   naturalLangPrompt,
   setNaturalLangPrompt,
   handleGenerateCodeFromPrompt,
-  naturalLangPromptRef,
-  generateCodeAndExplanation, // Pass the function down
-  handleNaturalLangPromptKeyDown // Destructure the prop here
+  naturalLangPromptRef
 }) => {
-  const [isProjectContextEnabled, setIsProjectContextEnabled] = useState(false);
-
-  const handleAIToolAction = async (actionType) => {
-    let prompt = '';
-    let toastMessage = '';
-    let mockCode = '';
-
-    const currentCode = canvasCode; // Get current code from the canvas
-
-    switch (actionType) {
-      case 'refactor': // This case is no longer directly triggered by a button, but kept for completeness
-        prompt = `Refactor the following code for better readability and performance:\n\n\`\`\`\n${currentCode}\n\`\`\``;
-        toastMessage = 'AI is refactoring your code...';
-        mockCode = `// Refactored code by AI\n// Original code was:\n/*\n${currentCode}\n*/\n\n// Example refactoring: improved variable names, simplified logic\nfunction calculateTotal(items) {\n  let total = 0;\n  for (const item of items) {\n    total += item.price * item.quantity;\n  }\n  return total;\n}`;
-        break;
-      case 'generate-tests': // This case is no longer directly triggered by a button, but kept for completeness
-        prompt = `Generate unit tests for the following JavaScript code:\n\n\`\`\`javascript\n${currentCode}\n\`\`\``;
-        toastMessage = 'AI is generating tests...';
-        mockCode = `// Unit tests generated by AI for the provided code\n\ndescribe('YourComponent', () => {\n  it('should render correctly', () => {\n    // Mock test case\n    expect(true).toBe(true);\n  });\n});\n\n// More specific tests would be generated based on the actual code.`;
-        break;
-      case 'explain-code': // This case is no longer directly triggered by a button, but kept for completeness
-        prompt = `Explain the following code:\n\n\`\`\`\n${currentCode}\n\`\`\``;
-        toastMessage = 'AI is explaining the code...';
-        mockCode = `// AI Explanation of the provided code:\n\n/*\nThis code snippet appears to be a JavaScript function that performs a simple calculation.\nIt likely iterates over a collection of 'items' and calculates a 'total' based on each item's 'price' and 'quantity'.\n\nKey aspects:\n- Loop: It uses a 'for...of' loop to iterate.\n- Accumulation: It accumulates values into a 'total' variable.\n- Return: It returns the final calculated total.\n*/`;
-        break;
-      case 'image-to-code': // This case is no longer directly triggered by a button, but kept for completeness
-        prompt = `Generate HTML/CSS/React code from this image description (mock): a simple login form with username, password, and a submit button.`;
-        toastMessage = 'AI is converting image to code... (Conceptual)';
-        mockCode = `// AI-generated code from image (conceptual)\n// Based on a login form with username, password, and submit button.\n\nimport React from 'react';\n\nconst LoginForm = () => {\n  return (\n    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">\n      <div className="p-8 bg-white rounded-lg shadow-md">\n        <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>\n        <form>\n          <div className="mb-4">\n            <label htmlFor="username" className="block text-gray-700 text-sm font-bold mb-2">Username</label>\n            <input type="text" id="username" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Enter username" />\n          </div>
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">Password</label>
-            <input type="password" id="password" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" placeholder="Enter password" />
-          </div>
-          <div className="flex items-center justify-between">
-            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Sign In</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};\n\nexport default LoginForm;`;
-        break;
-      case 'code-review':
-        prompt = `Perform a code review on the following code:\n\n\`\`\`\n${currentCode}\n\`\`\``;
-        toastMessage = 'AI is performing code review...';
-        mockCode = `AI Code Review (Mock):\n\n\`\`\`javascript\n// Review for your code:\n/*\n- Potential bug: Variable 'x' is declared but never used.\n- Style suggestion: Consider using 'const' instead of 'let' for variables that don't change.\n- Performance: Loop could be optimized for large datasets.\n*/\n\`\`\``;
-        break;
-      case 'fix-bug':
-        prompt = `Fix any bugs in the following code:\n\n\`\`\`\n${currentCode}\n\`\`\``;
-        toastMessage = 'AI is fixing bugs...';
-        mockCode = `AI Bug Fix (Mock):\n\n\`\`\`javascript\n// Original code with a simulated fix\nfunction calculateSum(a, b) {\n  // Bug: was 'a - b', fixed to 'a + b'\n  return a + b;\n}\n\`\`\`\n\nExplanation: The bug where the function was subtracting instead of adding has been fixed.`;
-        break;
-      default:
-        return;
-    }
-
-    addToast({ message: toastMessage, type: 'info' });
-    // Simulate AI processing and update canvas code
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call delay
-    setCanvasCode(mockCode);
-    addToast({ message: `Action completed! The canvas has been updated.`, type: 'success' });
-  };
-
-
   return (
     <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} p-5`}>
-      {/* AI Agent Actions Bar */}
-      <div className={`flex items-center justify-between mb-4 px-3 py-2 rounded-lg ${themeClasses.cardBg} shadow-md`}>
-        <span className={`text-sm font-semibold ${themeClasses.textPrimary}`}>AI Agent Actions:</span>
-        <div className="flex items-center space-x-3">
-          {/* Removed Refactor, Tests, Explain, Context */}
-          <button
-            onClick={() => handleAIToolAction('code-review')}
-            className={`flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${themeClasses.buttonSecondaryBg} ${themeClasses.textPrimary} hover:${themeClasses.buttonSecondaryHoverBg} transition-colors`}
-            title="Perform Code Review"
-          >
-            <GitPullRequest className="w-4 h-4 mr-1.5" /> Review
-          </button>
-          <button
-            onClick={() => handleAIToolAction('fix-bug')}
-            className={`flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${themeClasses.buttonSecondaryBg} ${themeClasses.textPrimary} hover:${themeClasses.buttonSecondaryHoverBg} transition-colors`}
-            title="Fix Bug"
-          >
-            <Bug className="w-4 h-4 mr-1.5" /> Fix Bug
-          </button>
-          {/* Image to Code button remains as it was requested previously and not explicitly removed */}
-          <button
-            onClick={() => handleAIToolAction('image-to-code')}
-            className={`flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${themeClasses.buttonSecondaryBg} ${themeClasses.textPrimary} hover:${themeClasses.buttonSecondaryHoverBg} transition-colors`}
-            title="Generate Code from Image (Conceptual)"
-          >
-            <Image className="w-4 h-4 mr-1.5" /> Image to Code
-          </button>
-        </div>
-      </div>
-
+      {/* Removed the <h2> "Developer Playground" header */}
 
       {/* Coding Interface - separate flex container below the heading */}
       <div className="flex flex-row h-full space-x-4 flex-grow">
@@ -1063,7 +973,12 @@ const ToolsSection = ({
                       e.target.style.height = 'auto';
                       e.target.style.height = e.target.scrollHeight + 'px';
                     }}
-                    onKeyDown={handleNaturalLangPromptKeyDown} // Use the new handler
+                    onKeyDown={(e) => { // Modified onKeyDown to pass naturalLangPrompt
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleGenerateCodeFromPrompt(naturalLangPrompt);
+                      }
+                    }}
                     placeholder="Type Here..."
                     className={`flex-grow font-sans text-lg bg-transparent outline-none resize-none overflow-hidden
                                 ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')}
@@ -1104,67 +1019,457 @@ const ToolsSection = ({
           {/* Right Column: Coding Canvas Section */}
           <div className="w-[70%] h-full flex flex-col">
               <CodingCanvasSection key="coding-canvas-section" themeClasses={themeClasses}
-                                   code={canvasCode} setCode={setCanvasCode} />
+                                   code={canvasCode} setCode={setCanvasCode}
+                                   addToast={addToast} // Pass addToast to CodingCanvasSection
+              />
           </div>
       </div>
     </div>
   );
 };
 
-// Settings Section Component
-const SettingsSection = ({ themeClasses, theme, setTheme }) => {
+// MailManagementSection Component
+const MailManagementSection = ({ themeClasses, addToast }) => {
+  const [to, setTo] = useState('');
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+
+  const handleSendMail = () => {
+    if (!to || !subject || !body) {
+      addToast({ message: 'Please fill in all email fields.', type: 'error' });
+      return;
+    }
+    // Simulate sending email
+    addToast({ message: `Email sent to ${to} with subject "${subject}"! (Mock Send)`, type: 'success' });
+    console.log('Sending email:', { to, subject, body });
+    // In a real application, this would integrate with an email API (e.g., SendGrid, Mailgun)
+    setTo('');
+    setSubject('');
+    setBody('');
+  };
+
   return (
     <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} p-6`}>
-      <h1 className={`text-2xl font-bold capitalize ${themeClasses.textPrimary} mb-4`}>Settings</h1> {/* Changed text-3xl to text-2xl */}
+      <h1 className={`text-2xl font-bold capitalize ${themeClasses.textPrimary} mb-4`}>Mail Management</h1>
+      <div className={`flex-1 ${themeClasses.cardBg} rounded-lg p-6 shadow-md overflow-y-auto custom-scrollbar`}>
+        <p className={`${themeClasses.textTertiary} mb-4 text-sm`}>
+          This section provides a plug-and-play interface for sending emails. In a real application, you would connect to email service APIs (e.g., SendGrid, Mailgun, AWS SES) here.
+        </p>
 
-      {/* Theme Selection Dropdown */}
-      <div className="mb-6">
-        <label htmlFor="theme-select" className={`block text-lg font-semibold ${themeClasses.textPrimary} mb-2`}>
-          Choose Theme:
-        </label>
-        <div className="relative w-full max-w-xs">
-          <select
-            id="theme-select"
-            value={theme}
-            onChange={(e) => setTheme(e.target.value)}
-            className={`w-full py-2 px-3 pr-8 rounded-md ${themeClasses.cardBg} ${themeClasses.borderColor} border ${themeClasses.textPrimary} text-base appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500`}
-          >
-            <option value="day">Day (Light)</option>
-            <option value="night">Night (Dark)</option>
-            <option value="midnight">Midnight (Indigo)</option>
-          </select>
-          <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${themeClasses.textTertiary}`}>
-            <ChevronDown className="h-5 w-5" />
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="mail-to" className={`block text-sm font-medium ${themeClasses.textPrimary} mb-1`}>To:</label>
+            <input
+              type="email"
+              id="mail-to"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className={`w-full p-2 rounded-md ${themeClasses.appBg} ${themeClasses.borderColor} border ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')} focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm`}
+              placeholder="recipient@example.com"
+            />
           </div>
+          <div>
+            <label htmlFor="mail-subject" className={`block text-sm font-medium ${themeClasses.textPrimary} mb-1`}>Subject:</label>
+            <input
+              type="text"
+              id="mail-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className={`w-full p-2 rounded-md ${themeClasses.appBg} ${themeClasses.borderColor} border ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')} focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm`}
+              placeholder="Your email subject"
+            />
+          </div>
+          <div>
+            <label htmlFor="mail-body" className={`block text-sm font-medium ${themeClasses.textPrimary} mb-1`}>Message Body:</label>
+            <textarea
+              id="mail-body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows="8"
+              className={`w-full p-2 rounded-md ${themeClasses.appBg} ${themeClasses.borderColor} border ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')} focus:outline-none focus:ring-1 focus:ring-blue-500 text-sm resize-y`}
+              placeholder="Type your message here..."
+            ></textarea>
+          </div>
+          <button
+            onClick={handleSendMail}
+            className={`${themeClasses.accentBg} ${themeClasses.accentText} px-5 py-2 rounded-md font-semibold text-base transition-colors duration-200 hover:bg-blue-700`}
+          >
+            Send Email
+          </button>
         </div>
       </div>
-
-      {/* Add more settings content here as needed */}
-      <p className={`${themeClasses.textTertiary}`}>This is where you can manage various application settings.</p>
     </div>
   );
 };
 
+// AdminOverviewSection Component (formerly AdminOverviewSubSection)
+const AdminOverviewSection = ({ themeClasses }) => (
+  <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary}`}>
+    <h2 className={`text-2xl font-bold capitalize ${themeClasses.textPrimary} mb-4`}>Admin Overview</h2>
+    <p className={`${themeClasses.textTertiary} text-sm mb-6`}>
+      This dashboard provides a high-level overview of system health, AI resource utilization, and user activity, crucial for operational monitoring.
+    </p>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={`${themeClasses.cardBg} rounded-lg p-4 shadow-md`}>
+        <h3 className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2 flex items-center`}><Cloud className="w-5 h-5 mr-2" /> System Status</h3>
+        <ul className={`${themeClasses.textSecondary} text-sm space-y-1`}>
+          <li>Uptime: <span className="font-medium text-green-400">99.9%</span></li>
+          <li>API Latency: <span className="font-medium">150ms</span></li>
+          <li>Database Connections: <span className="font-medium">50/100</span></li>
+        </ul>
+      </div>
+      <div className={`${themeClasses.cardBg} rounded-lg p-4 shadow-md`}>
+        <h3 className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2 flex items-center`}><BrainCircuit className="w-5 h-5 mr-2" /> AI Resource Usage</h3>
+        <ul className={`${themeClasses.textSecondary} text-sm space-y-1`}>
+          <li>Total Tokens Consumed (last 30 days): <span className="font-medium">1.2M</span></li>
+          <li>Most Used Model: <span className="font-medium">Gemini 2.0 Flash</span></li>
+          <li>GPU Utilization: <span className="font-medium">65%</span></li>
+        </ul>
+      </div>
+      <div className={`${themeClasses.cardBg} rounded-lg p-4 shadow-md`}>
+        <h3 className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2 flex items-center`}><Users className="w-5 h-5 mr-2" /> User Accounts</h3>
+        <ul className={`${themeClasses.textSecondary} text-sm space-y-1`}>
+          <li>Total Active Users: <span className="font-medium">1,234</span></li>
+          <li>New Sign-ups (Today): <span className="font-medium">15</span></li>
+          <li>Admin Users: <span className="font-medium">5</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+);
+
+// IntegrationsSection Component (formerly IntegrationsSubSection)
+const IntegrationsSection = ({ themeClasses, addToast }) => { // Removed db, userId props
+  // Static initial integration data - no real-time listener or Firestore interaction
+  const [integrations, setIntegrations] = useState([
+    { id: 'salesforce', name: 'Salesforce CRM', icon: 'Blocks', status: 'Connected', action: 'Connected' },
+    { id: 'github', name: 'GitHub', icon: 'GitBranch', status: 'Not Configured', action: 'Connect' },
+    { id: 'okta', name: 'Okta SSO', icon: 'Shield', status: 'Configured', action: 'Configured' },
+    { id: 'jira', name: 'Jira Project Management', icon: 'Play', status: 'Not Configured', action: 'Connect' },
+    { id: 'google_analytics', name: 'Google Analytics', icon: 'BarChart2', status: 'Connected', action: 'Connected' },
+    { id: 'slack', name: 'Slack Notifications', icon: 'MessageSquare', status: 'Not Configured', action: 'Connect' }, // Changed icon to MessageSquare
+  ]);
+
+  // Removed useEffect for Firestore listener and initial population
+
+  const handleConnect = (integrationId, currentStatus) => {
+    if (currentStatus === 'Connected' || currentStatus === 'Configured') {
+      addToast({ message: 'Integration is already connected or configured.', type: 'warning' });
+      return;
+    }
+
+    // Simulate an async connection process by updating local state
+    addToast({ message: `Connecting to ${integrationId}... (Simulated)`, type: 'info', duration: 1500 });
+
+    setTimeout(() => {
+      setIntegrations(prevIntegrations =>
+        prevIntegrations.map(integration =>
+          integration.id === integrationId
+            ? { ...integration, status: 'Connected', action: 'Connected' }
+            : integration
+        )
+      );
+      addToast({ message: `${integrationId} connected successfully! (Simulated)`, type: 'success' });
+    }, 1000); // Simulate API call delay
+  };
+
+
+  return (
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary}`}>
+      <h2 className={`text-2xl font-bold capitalize ${themeClasses.textPrimary} mb-4`}>Integrations</h2>
+      <p className={`${themeClasses.textTertiary} text-sm mb-6`}>
+        Seamlessly integrate with your existing enterprise tools to streamline workflows and data synchronization.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {integrations.map((integration) => (
+          <div key={integration.id} className={`${themeClasses.cardBg} rounded-lg p-4 shadow-md flex items-center justify-between`}>
+            <div className="flex items-center">
+              {React.createElement(
+                {
+                  Blocks: Blocks,
+                  GitBranch: GitBranch,
+                  Shield: Shield,
+                  Play: Play,
+                  BarChart2: BarChart2,
+                  MessageSquare: MessageSquare, // Changed icon to MessageSquare
+                }[integration.icon],
+                { className: `w-5 h-5 mr-3 ${themeClasses.textPrimary}` }
+              )}
+              <div>
+                <h3 className={`text-lg font-semibold ${themeClasses.textPrimary}`}>{integration.name}</h3>
+                <p className={`text-sm ${themeClasses.textSecondary}`}>{integration.status}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => handleConnect(integration.id, integration.status)}
+              className={`${integration.action === 'Connected' || integration.action === 'Configured' ? 'bg-green-600 cursor-not-allowed' : themeClasses.accentBg} ${themeClasses.accentText} px-4 py-2 rounded-md text-sm font-semibold transition-colors duration-200`}
+              disabled={integration.action === 'Connected' || integration.action === 'Configured'}
+            >
+              {integration.action}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// AuditLogsSection Component (formerly AuditLogsSubSection)
+const AuditLogsSection = ({ themeClasses }) => {
+  const auditLogs = [
+    { timestamp: '2025-07-09 10:30:00', user: 'admin@yourstartup.com', action: 'Updated Funding Data', status: 'Success', details: 'Changed Series A amount to $12M' },
+    { timestamp: '2025-07-09 09:45:10', user: 'dev.team@yourstartup.com', action: 'Connected new AI Tool', status: 'Success', details: 'Connected "LangChain" to Project Alpha' },
+    { timestamp: '2025-07-08 17:00:05', user: 'user@yourstartup.com', action: 'Ran Market Research', status: 'Failed', details: 'Query exceeded rate limit' },
+    { timestamp: '2025-07-08 14:15:30', user: 'admin@yourstartup.com', action: 'Configured SSO', status: 'Success', details: 'Enabled Okta integration' },
+    { timestamp: '2025-07-07 11:20:40', user: 'dev.team@yourstartup.com', action: 'Deployed AI Model', status: 'Success', details: 'Deployed "Sentiment Analyzer v2.1"' },
+  ];
+
+  return (
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary}`}>
+      <h2 className={`text-2xl font-bold capitalize ${themeClasses.textPrimary} mb-4`}>Audit Logs</h2>
+      <p className={`${themeClasses.textTertiary} text-sm mb-6`}>
+        Comprehensive audit trails for all system activities, ensuring accountability and compliance.
+      </p>
+      <div className={`${themeClasses.cardBg} rounded-lg p-4 shadow-md overflow-x-auto custom-scrollbar`}>
+        <table className="min-w-full divide-y divide-gray-700">
+          <thead>
+            <tr>
+              <th className={`px-4 py-2 text-left text-xs font-medium ${themeClasses.textTertiary} uppercase tracking-wider`}>Timestamp</th>
+              <th className={`px-4 py-2 text-left text-xs font-medium ${themeClasses.textTertiary} uppercase tracking-wider`}>User</th>
+              <th className={`px-4 py-2 text-left text-xs font-medium ${themeClasses.textTertiary} uppercase tracking-wider`}>Action</th>
+              <th className={`px-4 py-2 text-left text-xs font-medium ${themeClasses.textTertiary} uppercase tracking-wider`}>Status</th>
+              <th className={`px-4 py-2 text-left text-xs font-medium ${themeClasses.textTertiary} uppercase tracking-wider`}>Details</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-700">
+            {auditLogs.map((log, index) => (
+              <tr key={index}>
+                <td className={`px-4 py-2 whitespace-nowrap text-sm ${themeClasses.textSecondary}`}>{log.timestamp}</td>
+                <td className={`px-4 py-2 whitespace-nowrap text-sm ${themeClasses.textSecondary}`}>{log.user}</td>
+                <td className={`px-4 py-2 whitespace-nowrap text-sm ${themeClasses.textSecondary}`}>{log.action}</td>
+                <td className={`px-4 py-2 whitespace-nowrap text-sm ${log.status === 'Success' ? 'text-green-400' : 'text-red-400'}`}>{log.status}</td>
+                <td className={`px-4 py-2 text-sm ${themeClasses.textTertiary}`}>{log.details}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// AIModelManagementSection Component (formerly AIModelManagementSubSection)
+const AIModelManagementSection = ({ themeClasses, addToast }) => {
+  const models = [
+    { name: 'Gemini 2.0 Flash', version: 'v1.2', status: 'Online', lastDeployed: '2025-06-20', type: 'LLM' },
+    { name: 'Custom Sentiment Analyzer', version: 'v0.5', status: 'Online', lastDeployed: '2025-07-01', type: 'NLP' },
+    { name: 'Image Recognition API', version: 'v3.0', status: 'Online', lastDeployed: '2025-05-10', type: 'Vision' },
+    { name: 'Forecast Model (Sales)', version: 'v1.0', status: 'Offline', lastDeployed: '2025-04-01', type: 'Time-Series' },
+  ];
+
+  const handleDeploy = (modelName) => {
+    addToast({ message: `Simulating deployment of ${modelName} to production!`, type: 'info' });
+    // In a real app, this would trigger an MLOps pipeline
+  };
+
+  return (
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary}`}>
+      <h2 className={`text-2xl font-bold capitalize ${themeClasses.textPrimary} mb-4`}>AI Model Management</h2>
+      <p className={`${themeClasses.textTertiary} text-sm mb-6`}>
+        Manage your deployed AI models, monitor their status, and initiate new deployments.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {models.map((model, index) => (
+          <div key={index} className={`${themeClasses.cardBg} rounded-lg p-4 shadow-md flex flex-col justify-between`}>
+            <div>
+              <h3 className={`text-lg font-semibold ${themeClasses.textPrimary} mb-1 flex items-center`}><BrainCircuit className="w-5 h-5 mr-2" /> {model.name}</h3>
+              <p className={`text-sm ${themeClasses.textSecondary}`}>Version: <span className="font-medium">{model.version}</span></p>
+              <p className={`text-sm ${themeClasses.textSecondary}`}>Type: <span className="font-medium">{model.type}</span></p>
+              <p className={`text-sm ${themeClasses.textSecondary}`}>Status: <span className={`font-medium ${model.status === 'Online' ? 'text-green-400' : 'text-red-400'}`}>{model.status}</span></p>
+              <p className={`text-sm ${themeClasses.textSecondary} mb-3`}>Last Deployed: <span className="font-medium">{model.lastDeployed}</span></p>
+            </div>
+            <button
+              onClick={() => handleDeploy(model.name)}
+              className={`${themeClasses.accentBg} ${themeClasses.accentText} px-4 py-2 rounded-md text-sm font-semibold transition-colors duration-200 hover:bg-blue-700`}
+            >
+              Deploy New Version (Mock)
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// NotificationsSection Component (formerly NotificationsSubSection)
+const NotificationsSection = ({ themeClasses, addToast }) => {
+  const [emailEnabled, setEmailEnabled] = useState(true);
+  const [slackEnabled, setSlackEnabled] = useState(false);
+  const [inAppEnabled, setInAppEnabled] = useState(true);
+
+  const handleToggle = (settingName, currentState, setter) => {
+    setter(!currentState);
+    addToast({ message: `${settingName} notifications ${!currentState ? 'enabled' : 'disabled'}! (Mock Update)`, type: 'info' });
+  };
+
+  const ToggleSwitch = ({ label, enabled, onToggle, themeClasses }) => (
+    <div className="flex items-center justify-between py-2">
+      <span className={`${themeClasses.textPrimary} text-base`}>{label}</span>
+      <label className="relative inline-flex items-center cursor-pointer">
+        <input type="checkbox" value="" className="sr-only peer" checked={enabled} onChange={onToggle} />
+        <div className={`w-11 h-6 ${enabled ? 'bg-blue-600' : 'bg-gray-400'} rounded-full peer peer-focus:ring-2 peer-focus:ring-blue-300 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all`}></div>
+      </label>
+    </div>
+  );
+
+  return (
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary}`}>
+      <h2 className={`text-2xl font-bold capitalize ${themeClasses.textPrimary} mb-4`}>Notifications</h2>
+      <p className={`${themeClasses.textTertiary} text-sm mb-6`}>
+        Configure how you receive important alerts and updates from the platform.
+      </p>
+      <div className={`${themeClasses.cardBg} rounded-lg p-4 shadow-md`}>
+        <h3 className={`text-lg font-semibold ${themeClasses.textPrimary} mb-3 flex items-center`}><BellRing className="w-5 h-5 mr-2" /> Notification Channels</h3>
+        <ToggleSwitch
+          label="Email Alerts for System Errors"
+          enabled={emailEnabled}
+          onToggle={() => handleToggle('Email', emailEnabled, setEmailEnabled)}
+          themeClasses={themeClasses}
+        />
+        <ToggleSwitch
+          label="Slack Notifications for Deployments"
+          enabled={slackEnabled}
+          onToggle={() => handleToggle('Slack', slackEnabled, setSlackEnabled)}
+          themeClasses={themeClasses}
+        />
+        <ToggleSwitch
+          label="In-App Prompts for New Features"
+          enabled={inAppEnabled}
+          onToggle={() => handleToggle('In-App', inAppEnabled, setInAppEnabled)}
+          themeClasses={themeClasses}
+        />
+      </div>
+      <p className={`${themeClasses.textTertiary} text-xs mt-4`}>
+        Note: Some critical system alerts may override your preferences to ensure timely communication.
+      </p>
+    </div>
+  );
+};
+
+
+// RBACSubSection Component (remains within Settings, but could be its own top-level if needed)
+const RBACSubSection = ({ themeClasses }) => {
+  const roles = [
+    { name: 'Admin', description: 'Full access to all platform features, user management, and system configurations.', permissions: ['Manage Users', 'Deploy Models', 'View All Data', 'Configure Integrations'] },
+    { name: 'Developer', description: 'Access to coding tools, AI model training, and project-specific data.', permissions: ['Access Tools', 'Train Models', 'View Project Data', 'Manage Code'] },
+    { name: 'Analyst', description: 'Read-only access to data, reports, and AI model performance metrics.', permissions: ['View Reports', 'Access Analytics', 'View AI Usage'] },
+    { name: 'Viewer', description: 'Limited read-only access to public project information and community forums.', permissions: ['View Public Projects', 'Participate in Community'] },
+  ];
+
+  return (
+    <React.Fragment>
+      <div className="space-y-6">
+        <p className={`${themeClasses.textTertiary} text-sm`}>
+          Define and manage user roles with granular permissions to ensure secure and appropriate access across your organization.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {roles.map((role, index) => (
+            <div key={index} className={`${themeClasses.cardBg} rounded-lg p-4 shadow-md`}>
+              <h3 className={`text-lg font-semibold ${themeClasses.textPrimary} mb-2 flex items-center`}><UserCog className="w-5 h-5 mr-2" /> {role.name}</h3>
+              <p className={`text-sm ${themeClasses.textSecondary} mb-3`}>{role.description}</p>
+              <h4 className={`text-sm font-semibold ${themeClasses.textPrimary} mb-1`}>Key Permissions:</h4>
+              <ul className={`${themeClasses.textTertiary} text-xs list-disc pl-5 space-y-0.5`}>
+                {role.permissions.map((perm, pIndex) => (
+                  <li key={pIndex}>{perm}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+        <p className={`${themeClasses.textTertiary} text-xs mt-4`}>
+          Note: In a production environment, role assignments and detailed permission configurations would be managed via your enterprise identity provider (e.g., Okta, Azure AD) integrated with our platform.
+        </p>
+      </div>
+    </React.Fragment>
+  );
+};
+
+// Settings Section Component - Now simplified
+const SettingsSection = ({ themeClasses, theme, setTheme, addToast, userId }) => { // Added userId prop
+  const [activeSettingTab, setActiveSettingTab] = useState('general'); // Default to 'general'
+
+  const settingTabs = [
+    { id: 'general', label: 'General', icon: Settings },
+    { id: 'rbac', label: 'Access Control', icon: UserCog }, // RBAC remains here
+  ];
+
+  return (
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} p-6`}>
+      <h1 className={`text-2xl font-bold capitalize ${themeClasses.textPrimary} mb-4`}>Settings</h1>
+
+      {/* Sub-navigation for settings */}
+      <div className={`flex flex-wrap gap-2 mb-6 border-b ${themeClasses.borderColor} pb-3`}>
+        {settingTabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveSettingTab(tab.id)}
+            className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors duration-200 flex items-center
+              ${activeSettingTab === tab.id ? `${themeClasses.accentBg} ${themeClasses.accentText}` : `${themeClasses.buttonSecondaryBg} ${themeClasses.textPrimary} hover:${themeClasses.buttonSecondaryHoverBg}`}
+            `}
+          >
+            {React.createElement(tab.icon, { className: 'w-4 h-4 mr-2' })}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content based on active sub-tab */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+        {activeSettingTab === 'general' && (
+          <div className="mb-6">
+            <label htmlFor="theme-select" className={`block text-lg font-semibold ${themeClasses.textPrimary} mb-2`}>
+              Choose Theme:
+            </label>
+            <div className="relative w-full max-w-xs">
+              <select
+                id="theme-select"
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
+                className={`w-full py-2 px-3 pr-8 rounded-md ${themeClasses.cardBg} ${themeClasses.borderColor} border ${themeClasses.textPrimary} text-base appearance-none focus:outline-none focus:ring-1 focus:ring-blue-500`}
+              >
+                <option value="day">Day (Light)</option>
+                <option value="night">Night (Dark)</option>
+                <option value="midnight">Midnight (Indigo)</option>
+              </select>
+              <div className={`pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 ${themeClasses.textTertiary}`}>
+                <ChevronDown className="h-5 w-5" />
+              </div>
+            </div>
+            {/* Display userId here */}
+            {userId && (
+              <div className={`mt-4 text-sm ${themeClasses.textTertiary}`}>
+                Your User ID: <span className={`${themeClasses.textPrimary} font-semibold`}>{userId}</span>
+              </div>
+            )}
+            <p className={`${themeClasses.textTertiary} mt-4`}>This is where you can manage various general application settings.</p>
+          </div>
+        )}
+
+        {activeSettingTab === 'rbac' && <RBACSubSection themeClasses={themeClasses} />}
+      </div>
+    </div>
+  );
+};
+
+
 // CodingCanvasSection Component - Implemented interactive coding canvas with view modes
-const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receives code and setCode as props
+const CodingCanvasSection = ({ themeClasses, code, setCode, addToast }) => { // Now receives code and setCode as props
   const [codeOutput, setCodeOutput] = useState(''); // For successful code execution output
   const [codeError, setCodeError] = useState(''); // For errors during code execution
   const [detectedLanguage, setDetectedLanguage] = useState('javascript'); // New state for detected language
   const [currentView, setCurrentView] = useState('code'); // 'code', 'output'
   const [htmlOutputContent, setHtmlOutputContent] = useState(''); // New state to store HTML string for iframe
-  const monacoEditorContainerRef = useRef(null); // Ref for the div that would host Monaco Editor
-  const textareaRef = useRef(null); // Ref for the actual textarea being used
-
-  // Simulate Monaco Editor initialization
-  useEffect(() => {
-    if (monacoEditorContainerRef.current) {
-      console.log("Monaco Editor would be initialized here.");
-      console.log("Example: monaco.editor.create(monacoEditorContainerRef.current, { value: code, language: detectedLanguage, theme: 'vs-dark' });");
-      // In a real setup, you'd load the Monaco AMD loader script and then use monaco.editor.create
-      // Or, if using @monaco-editor/react, you'd use the <Editor> component directly.
-      // This environment does not support direct npm package imports or custom script loading for Monaco.
-    }
-  }, [detectedLanguage]); // Re-run if language changes (to update Monaco's language)
+  const codeEditorRef = useRef(null); // Ref for the textarea to manage cursor position
 
 
   // Function to detect the programming language based on code content
@@ -1255,11 +1560,11 @@ const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receiv
     try {
       const { type, name, codeSnippet } = JSON.parse(data);
       if (type === 'tool' && codeSnippet) {
-        const editorElement = textareaRef.current; // Use textareaRef for the actual editor
-        if (!editorElement) return;
+        const textarea = codeEditorRef.current;
+        if (!textarea) return;
 
-        const startPos = editorElement.selectionStart;
-        const endPos = editorElement.selectionEnd;
+        const startPos = textarea.selectionStart;
+        const endPos = textarea.selectionEnd;
         const newCode = code.substring(0, startPos) + codeSnippet + code.substring(endPos, code.length);
         setCode(newCode);
 
@@ -1267,9 +1572,9 @@ const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receiv
         const newCursorPos = startPos + codeSnippet.length;
         // Need to wait for React to update the DOM, then set cursor position
         requestAnimationFrame(() => {
-          editorElement.selectionStart = newCursorPos;
-          editorElement.selectionEnd = newCursorPos;
-          editorElement.focus();
+          textarea.selectionStart = newCursorPos;
+          textarea.selectionEnd = newCursorPos;
+          textarea.focus();
         });
       }
     } catch (error) {
@@ -1283,12 +1588,31 @@ const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receiv
     e.dataTransfer.dropEffect = 'copy'; // Indicate a copy operation
   }, []);
 
+  // Handlers for new buttons
+  const handleReviewCode = () => {
+    addToast({ message: "Simulating code review process...", type: "info" });
+    // In a real app, this would send code to an AI model or a code analysis tool.
+  };
+
+  const handleFixBug = () => {
+    addToast({ message: "Simulating bug fixing with AI assistance...", type: "info" });
+    // In a real app, this would send code to an AI model for bug identification and suggestion.
+  };
+
+  const handleImageToCode = () => {
+    addToast({ message: "Simulating image to code conversion...", type: "info" });
+    // In a real app, this would open a file input for an image and then send it to an AI model for code generation.
+  };
+
 
   return (
     <div className={`flex flex-col h-full rounded-lg ${themeClasses.appBg} ${themeClasses.textPrimary} relative overflow-hidden w-full`}>
-      {/* Top Bar for View Modes */}
+      {/* Top Bar for View Modes and New Buttons */}
       <div className={`flex justify-between items-center px-4 py-2 bg-gray-900 border-b ${themeClasses.borderColor} flex-shrink-0`}>
+        {/* Language display on the left */}
         <span className={`text-sm ${themeClasses.textTertiary}`}>Language: <span className="font-semibold capitalize">{detectedLanguage}</span></span>
+
+        {/* Group for all buttons on the right */}
         <div className="flex items-center space-x-2">
           {/* Code Button */}
           <button
@@ -1305,9 +1629,30 @@ const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receiv
             }}
             className={`${currentView === 'output' ? 'bg-blue-600 text-white' : 'text-white'} px-3 py-1 rounded-md text-sm font-semibold`}
           >
-            Preview/Output
+            Output
           </button>
-          {/* Play/Stop Buttons removed */}
+          {/* New Buttons */}
+          <button
+            onClick={handleReviewCode}
+            className={`text-white px-3 py-1 rounded-md text-sm font-semibold flex items-center ${themeClasses.buttonSecondaryBg} hover:${themeClasses.buttonSecondaryHoverBg}`}
+            title="Review Code"
+          >
+            <Eye className="w-4 h-4 mr-1" /> Review
+          </button>
+          <button
+            onClick={handleFixBug}
+            className={`text-white px-3 py-1 rounded-md text-sm font-semibold flex items-center ${themeClasses.buttonSecondaryBg} hover:${themeClasses.buttonSecondaryHoverBg}`}
+            title="Fix Bug"
+          >
+            <Bug className="w-4 h-4 mr-1" /> Fix Bug
+          </button>
+          <button
+            onClick={handleImageToCode}
+            className={`text-white px-3 py-1 rounded-md text-sm font-semibold flex items-center ${themeClasses.buttonSecondaryBg} hover:${themeClasses.buttonSecondaryHoverBg}`}
+            title="Image to Code"
+          >
+            <Image className="w-4 h-4 mr-1" /> Image to Code
+          </button>
         </div>
       </div>
 
@@ -1315,28 +1660,17 @@ const CodingCanvasSection = ({ themeClasses, code, setCode }) => { // Now receiv
       <div className="flex-grow w-full h-full flex flex-col">
         {currentView === 'code' && (
           <div className="w-full h-full flex flex-col bg-gray-900">
-            {/* This div would host the Monaco Editor instance */}
-            <div
-              ref={monacoEditorContainerRef}
-              className="flex-grow relative" // Added relative for absolute positioning of textarea
+            <textarea
+              ref={codeEditorRef} // Assign ref to textarea
+              value={code} // Uses prop value
+              onChange={(e) => setCode(e.target.value)} // Uses prop setter
               onDragOver={handleDragOver} // Allow dropping
               onDrop={handleDrop} // Handle the drop event
-            >
-              {/* This textarea simulates Monaco Editor for functionality in this environment */}
-              <textarea
-                ref={textareaRef} // Assign ref to textarea
-                value={code} // Uses prop value
-                onChange={(e) => setCode(e.target.value)} // Uses prop setter
-                placeholder="Write your code here or drag a tool snippet..."
-                className="absolute inset-0 p-4 font-mono text-sm bg-transparent outline-none resize-none custom-scrollbar"
-                style={{ color: themeClasses.textPrimary, backgroundColor: themeClasses.sidebarBg }} // Styled to look more like an editor
-                spellCheck="false" // Disable browser spell check for code
-              ></textarea>
-              <div className="absolute top-2 left-2 text-xs text-gray-500 z-10">
-                {/* Visual indicator for Monaco Editor */}
-                Monaco Editor (Simulated)
-              </div>
-            </div>
+              placeholder="Write your code here or drag a tool snippet..."
+              className="flex-grow p-4 font-mono text-sm bg-transparent outline-none resize-none custom-scrollbar"
+              style={{ color: themeClasses.textPrimary }}
+              spellCheck="false" // Disable browser spell check for code
+            ></textarea>
           </div>
         )}
 
@@ -1398,21 +1732,18 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
 
 
   // Function to call Gemini API
-  const callGeminiAPI = useCallback(async (userMessage, currentModel, isSummaryRequest = false, isDeepResearch = false, actionType = null) => {
+  const callGeminiAPI = useCallback(async (userMessage, currentModel, isSummaryRequest = false, isDeepResearch = false) => {
     setIsLoading(true);
     let chatHistoryToSend = [];
-    let mockResponse = '';
 
-    // Mock AI responses for new features (these are now handled in ToolsSection for relevant actions)
+    // Construct chat history for the API call
     if (isSummaryRequest) {
         chatHistory.forEach(msg => {
             chatHistoryToSend.push({ role: msg.role === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
         });
         chatHistoryToSend.push({ role: "user", parts: [{ text: "Please summarize the entire conversation concisely." }] });
-        mockResponse = "Mock Summary: This conversation covered various AI features, including code generation, market research, and new AI agent capabilities like code review and bug fixing.";
     } else if (userMessage.startsWith("Generate startup ideas for:")) {
-        chatHistoryToSend.push({ role: "user", parts: [{ text: userMessage }] });
-        mockResponse = `Mock Startup Ideas for "${userMessage.replace("Generate startup ideas for:", "").trim()}":\n\n1. AI-powered personalized learning platform for K-12.\n2. Sustainable urban farming solutions using IoT.\n3. Gamified financial literacy app for Gen Z.\n4. Decentralized identity management system on blockchain.`;
+         chatHistoryToSend.push({ role: "user", parts: [{ text: userMessage }] });
     } else if (userMessage.startsWith("Generate JavaScript code for:")) {
         // For code generation, only send the specific request prompt
         chatHistoryToSend.push({ role: "user", parts: [{ text: userMessage }] });
@@ -1422,24 +1753,42 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
           if (onCodeGenerated) {
             onCodeGenerated(generatedCode); // Pass generated code to parent
           }
-          setIsLoading(false); // Ensure loading is off after code generation
           return "Code generated successfully!"; // Acknowledge code generation
         }
-        mockResponse = `// Mock JavaScript code for: ${userMessage.replace("Generate JavaScript code for:", "").trim()}\nconsole.log("Hello from AI-generated code!");`;
     } else if (isDeepResearch) {
         chatHistoryToSend.push({ role: "user", parts: [{ text: `Perform market research on: "${userMessage}"` }] });
-        mockResponse = `Mock Market Research for "${userMessage}":\n\nThe market for ${userMessage} shows strong growth potential due to increasing consumer demand and technological advancements. Key competitors include X, Y, and Z. Opportunities exist in niche markets and sustainable solutions. Challenges include regulatory hurdles and intense competition.`;
     }
     else {
         chatHistoryToSend.push({ role: "user", parts: [{ text: userMessage }] });
-        mockResponse = `Mock response for: "${userMessage}". I can help with various tasks like generating code, ideas, or performing research.`;
     }
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const payload = { contents: chatHistoryToSend };
+      const apiKey = ""; // API key will be provided by Canvas
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
 
-    setIsLoading(false);
-    return mockResponse; // Return the mock response
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const result = await response.json();
+
+      if (result.candidates && result.candidates.length > 0 &&
+          result.candidates[0].content && result.candidates[0].content.parts &&
+          result.candidates[0].content.parts.length > 0) {
+        return result.candidates[0].content.parts[0].text;
+      } else {
+        console.error('Gemini API response structure unexpected:', result);
+        return "Error: Could not get a valid response from the AI model.";
+      }
+    } catch (error) {
+      console.error('Error calling Gemini API:', error);
+      return `Error: Failed to connect to the AI model. ${error.message}`;
+    } finally {
+      setIsLoading(false);
+    }
   }, [chatHistory, codeGenerationAPI, onCodeGenerated]); // Added new dependencies
 
 
@@ -1574,7 +1923,6 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
   // Conditional minHeight for the textarea
   const textareaMinHeightPx = isMinimalMode ? 64 : 32;
   const textareaMinHeight = `${textareaMinHeightPx}px`;
-
 
   return (
     <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} ${isMinimalMode ? '' : 'relative'}`}> {/* Conditional relative positioning */}
@@ -1726,7 +2074,6 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
             >
               Market Research
             </button>
-            {/* Removed Translate button */}
           </div>
 
           <div className="relative">
@@ -1741,7 +2088,7 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
               <option value="claude">Claude</option>
             </select>
             <div className={`pointer-events-none absolute inset-y-0 right-1.5 flex items-center ${themeClasses.textTertiary}`}>
-              <ChevronDown className="w-3 h-3" />
+              <ChevronDown className="h-5 w-5" />
             </div>
           </div>
         </div>
@@ -1790,7 +2137,7 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
           border-radius: 5px;
           background-color: #9880ff;
           color: #9880ff;
-          animation: dotFlashing 1000ms infinite linear alternate;
+          animation: dotFlashing 1s infinite linear alternate;
         }
 
         .dot-flashing::after {
@@ -1807,7 +2154,7 @@ const ChatbotInterface = ({ themeClasses, onOpenCodingCanvas, isMinimalMode = fa
             background-color: #eee;
           }
         }
-      `}</style>
+       `}</style>
     </div>
   );
 };
@@ -1822,6 +2169,51 @@ const WorkspaceSection = ({ themeClasses, onOpenCodingCanvas }) => { // Pass onO
     </div>
   );
 };
+
+// AdminTabSection Component: New component to house all admin-related sub-sections
+const AdminTabSection = ({ themeClasses, addToast }) => { // Removed db, userId props
+  const [activeAdminSubTab, setActiveAdminSubTab] = useState('admin-overview'); // Default to 'admin-overview'
+
+  const adminSubTabs = [
+    { id: 'admin-overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'integrations', label: 'Integrations', icon: Blocks },
+    { id: 'audit-logs', label: 'Audit Logs', icon: HardDrive },
+    { id: 'ai-models', label: 'AI Models', icon: BrainCircuit },
+    { id: 'notifications', label: 'Notifications', icon: BellRing },
+  ];
+
+  return (
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} p-6`}>
+      <h1 className={`text-2xl font-bold capitalize ${themeClasses.textPrimary} mb-4`}>Admin Panel</h1>
+
+      {/* Sub-navigation for admin tabs */}
+      <div className={`flex flex-wrap gap-2 mb-6 border-b ${themeClasses.borderColor} pb-3`}>
+        {adminSubTabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveAdminSubTab(tab.id)}
+            className={`px-4 py-2 rounded-md text-sm font-semibold transition-colors duration-200 flex items-center
+              ${activeAdminSubTab === tab.id ? `${themeClasses.accentBg} ${themeClasses.accentText}` : `${themeClasses.buttonSecondaryBg} ${themeClasses.textPrimary} hover:${themeClasses.buttonSecondaryHoverBg}`}
+            `}
+          >
+            {React.createElement(tab.icon, { className: 'w-4 h-4 mr-2' })}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content based on active sub-tab */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar pr-2">
+        {activeAdminSubTab === 'admin-overview' && <AdminOverviewSection themeClasses={themeClasses} />}
+        {activeAdminSubTab === 'integrations' && <IntegrationsSection themeClasses={themeClasses} addToast={addToast} />}
+        {activeAdminSubTab === 'audit-logs' && <AuditLogsSection themeClasses={themeClasses} />}
+        {activeAdminSubTab === 'ai-models' && <AIModelManagementSection themeClasses={themeClasses} addToast={addToast} />}
+        {activeAdminSubTab === 'notifications' && <NotificationsSection themeClasses={themeClasses} addToast={addToast} />}
+      </div>
+    </div>
+  );
+};
+
 
 // The main application component
 const App = () => {
@@ -1838,6 +2230,9 @@ const App = () => {
   const [naturalLangPrompt, setNaturalLangPrompt] = useState('');
   const naturalLangPromptRef = useRef(null); // Ref for the natural language prompt textarea
 
+  // Firebase states - REMOVED
+  const [userId, setUserId] = useState('mock-user-id-12345'); // Mock user ID for demonstration
+
 
   const themeClasses = getThemeClasses(theme);
 
@@ -1851,12 +2246,24 @@ const App = () => {
     setToasts((prevToasts) => prevToasts.filter((toast) => toast.id !== id));
   }, []);
 
+  // Firebase Initialization and Auth Listener - REMOVED
+  // Replaced with a simple mock user ID for demonstration purposes.
+  useEffect(() => {
+    // Simulate a delay for "authentication" and then set a mock user ID
+    const timer = setTimeout(() => {
+      setUserId('mock-user-id-' + Math.random().toString(36).substring(2, 9)); // Generate a random mock ID
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
+
 
   // Common function for generating code and explanation, used by both input areas
   const generateCodeAndExplanation = useCallback(async (prompt) => {
+    // Ensure prompt is a string before calling .trim()
+    const safePrompt = String(prompt || '');
     let generatedCode = '';
     let explanation = '';
-    const lowerPrompt = prompt.toLowerCase();
+    const lowerPrompt = safePrompt.toLowerCase();
 
     if (lowerPrompt.includes("javascript") && lowerPrompt.includes("counter")) {
         generatedCode = `let count = 0;
@@ -1899,7 +2306,7 @@ button:hover {
         explanation = "This CSS code styles a button to be red with white text and a subtle hover effect. You can apply this to an HTML button element.";
     }
     else {
-        generatedCode = `// AI could not generate code for: "${prompt}"
+        generatedCode = `// AI could not generate code for: "${safePrompt}"
 // Please try a different prompt or be more specific.`;
         explanation = "I couldn't generate specific code for that request. Please try rephrasing or being more precise with your requirements.";
     }
@@ -1921,8 +2328,10 @@ button:hover {
   }, []);
 
   const handleGenerateCodeFromPrompt = useCallback(async (prompt) => { // Made async to use await for generateCodeAndExplanation
-    if (prompt.trim() === '') return;
-    const { code, explanation } = await generateCodeAndExplanation(prompt);
+    // Ensure prompt is a string before calling .trim()
+    const safePrompt = String(prompt || '');
+    if (safePrompt.trim() === '') return;
+    const { code, explanation } = await generateCodeAndExplanation(safePrompt);
     setCanvasCode(code);
     addToast({ message: `Code generated! ${explanation}`, type: 'success', duration: 5000 });
   }, [generateCodeAndExplanation, setCanvasCode, addToast]);
@@ -1962,12 +2371,53 @@ button:hover {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: ${themeClasses.textTertiary};
         }
+        /* Dot flashing animation for loading states */
+        .dot-flashing {
+          position: relative;
+          width: 10px;
+          height: 10px;
+          border-radius: 5px;
+          background-color: #9880ff;
+          color: #9880ff;
+          animation: dotFlashing 1s infinite linear alternate;
+          animation-delay: 0.5s;
+        }
+
+        .dot-flashing::before, .dot-flashing::after {
+          content: '';
+          display: inline-block;
+          position: absolute;
+          top: 0;
+          left: -15px;
+          width: 10px;
+          height: 10px;
+          border-radius: 5px;
+          background-color: #9880ff;
+          color: #9880ff;
+          animation: dotFlashing 1s infinite linear alternate;
+        }
+
+        .dot-flashing::after {
+          left: 15px;
+          animation-delay: 1s;
+        }
+
+        @keyframes dotFlashing {
+          0% {
+            background-color: #9880ff;
+          }
+          50%,
+          100% {
+            background-color: #eee;
+          }
+        }
        `}</style>
        {/* Sidebar component */}
        <AISidebar activeItem={activeSidebarItem} onSidebarItemClick={handleSidebarItemClick} themeClasses={themeClasses} />
 
        {/* Main content area wrapper - now conditionally applies width */}
        <main className={`p-4 ${themeClasses.textPrimary} flex flex-col overflow-y-auto flex-grow`}>
+           {/* Removed userId display from here */}
            {activeSidebarItem === 'funding' ? (
              <FundingSection themeClasses={themeClasses} />
            ) : activeSidebarItem === 'resources' ? (
@@ -1987,11 +2437,11 @@ button:hover {
                            setNaturalLangPrompt={setNaturalLangPrompt}
                            handleGenerateCodeFromPrompt={handleGenerateCodeFromPrompt}
                            naturalLangPromptRef={naturalLangPromptRef}
-                           generateCodeAndExplanation={generateCodeAndExplanation} // Pass the function
-                           handleNaturalLangPromptKeyDown={handleNaturalLangPromptKeyDown} // Pass the handler
              />
+           ) : activeSidebarItem === 'admin-tab' ? ( // Admin Tab: New consolidated section
+             <AdminTabSection themeClasses={themeClasses} addToast={addToast} />
            ) : activeSidebarItem === 'settings' ? (
-             <SettingsSection themeClasses={themeClasses} theme={theme} setTheme={setTheme} />
+             <SettingsSection themeClasses={themeClasses} theme={theme} setTheme={setTheme} addToast={addToast} userId={userId} />
            ) : (
              <div className="flex flex-col items-center justify-center h-full">
                <h2 className={`text-xl ${themeClasses.textPrimary}`}>Select an option from the sidebar.</h2>
