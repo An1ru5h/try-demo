@@ -97,14 +97,15 @@ const AISidebar = ({ activeItem, onSidebarItemClick, themeClasses }) => {
   return (
     <aside className={`w-[60px] ${themeClasses.sidebarBg} ${themeClasses.textTertiary} p-1 font-sans flex flex-col items-center relative`}>
       {/* Company Logo Placeholder - Replaced with image */}
-      <div className={`w-10 h-10 mt-3 mb-4 rounded-full flex items-center justify-center overflow-hidden shadow-md`}>
+      {/* Added an anchor tag around the logo for redirection */}
+      <a href="https://mvio-six.vercel.app/" className="w-10 h-10 mt-3 mb-4 rounded-full flex items-center justify-center overflow-hidden shadow-md">
         <img
           src="./Logo.png" // Placeholder image URL
           alt="Company Logo"
           className="w-full h-full object-cover"
           onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/40x40/555/FFF?text=Error'; }} // Fallback on error
         />
-      </div>
+      </a>
       <div className="flex-grow w-full">
         <nav className="w-full">
           <ul>
