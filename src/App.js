@@ -174,7 +174,12 @@ const FundingSection = ({ themeClasses }) => {
   }, [industry, stage, location, investmentSize]); // Re-run when filters change
 
   return (
-    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary}`}>
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} p-4`}>
+      {/* Message at the top of the search bar */}
+      <p className={`text-sm ${themeClasses.textTertiary} mb-4`}>
+        This is a simulated environment for demonstration purposes.
+      </p>
+
       {/* Filters Section - Reduced gap and padding */}
       <div className="flex flex-wrap gap-2 mb-4 items-end justify-between">
         <FilterDropdown label="Industry" value={industry} onChange={setIndustry} options={['', 'Healthcare', 'Fintech', 'AI', 'SaaS', 'Digital Health']} themeClasses={themeClasses} />
@@ -276,7 +281,12 @@ const ResourcesSection = ({ themeClasses }) => {
   );
 
   return (
-    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary}`}>
+    <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} p-4`}>
+      {/* Message at the top of the search bar */}
+      <p className={`text-sm ${themeClasses.textTertiary} mb-4`}>
+        This is a simulated environment for demonstration purposes.
+      </p>
+
       <div className="flex items-center justify-between mb-4">
         <h2 className={`text-2xl font-bold ${themeClasses.textPrimary}`}>Resources</h2>
         <div className="relative">
@@ -356,6 +366,11 @@ const CommunitySection = ({ themeClasses }) => {
 
   return (
     <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} p-4`}>
+      {/* Message at the top of the search bar */}
+      <p className={`text-sm ${themeClasses.textTertiary} mb-4`}>
+        This is a simulated environment for demonstration purposes.
+      </p>
+
       {/* Combined search and filter into a single line at the top - Reduced margin and padding */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-4 space-y-3 sm:space-y-0 sm:space-x-4">
         <div className="relative flex-grow w-full sm:w-auto sm:mr-3 mb-3 sm:mb-0">
@@ -769,7 +784,7 @@ async function runLangFlowChain(userQuery) {
         toolDetails.differences = "Provides a structured, modular approach to building complex LLM applications, abstracting away much of the boilerplate code for integrations and logic flows. It enables developers to combine LLMs with other computational or knowledge sources.";
         mockCodeSnippet = `// LangChain Integration (Basic Example)
 import { ChatOpenAI } from "@langchain/openai";
-import { HumanMessage, SystemMessage } => from "@langchain/core/messages";
+import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 
 const chat = new ChatOpenAI({
   apiKey: "YOUR_OPENAI_API_KEY", // Replace with your API key
@@ -1973,7 +1988,7 @@ button:hover {
              // Tools tab: This is the main section for the developer playground
              <ToolsSection themeClasses={themeClasses}
                            addToast={addToast}
-                           setIsToolMenuOpen={setIsToolMenuOpen}Cha
+                           setIsToolMenuOpen={setIsToolMenuOpen}
                            canvasCode={canvasCode}
                            setCanvasCode={setCanvasCode}
                            naturalLangPrompt={naturalLangPrompt}
