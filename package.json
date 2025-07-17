@@ -2,7 +2,7 @@
   "name": "my-fixed-app",
   "version": "0.1.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "http://.",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
@@ -11,11 +11,13 @@
   },
   "dependencies": {
     "@google/genai": "^1.9.0",
+    "@monaco-editor/react": "^4.7.0",
     "canvas-confetti": "^1.9.3",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "firebase": "^11.10.0",
     "lucide-react": "^0.293.0",
+    "openai": "^5.9.2",
     "pocketbase": "^0.26.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -26,7 +28,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17"
   },
@@ -41,5 +43,17 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "main": "postcss.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/An1ru5h/try-demo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/An1ru5h/try-demo/issues"
+  },
+  "description": ""
 }

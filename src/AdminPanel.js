@@ -432,5 +432,4 @@ const AdminTabSection = ({ themeClasses, addToast }) => {
     </div>
   );
 };
-
 export default AdminTabSection;
