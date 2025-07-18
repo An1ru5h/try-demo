@@ -89,12 +89,12 @@ const CodingCanvasSection = ({ themeClasses, code, setCode, addToast }) => {
   const handleReviewCode = async () => {
     addToast({ message: "Reviewing code with AI...", type: "info" });
     try {
-      const res = await fetch('http://localhost:5000/api/review', {
+      const response = await fetch('http://localhost:5000/api/generate-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ prompt: code }), // Using 'prompt' as key, but 'code' as value
       });
-      const data = await res.json();
+      const data = await response.json();
       addToast({ message: "Review complete. See output.", type: "success" });
       setCodeOutput(data.result);
       setCurrentView('output');
@@ -107,12 +107,12 @@ const CodingCanvasSection = ({ themeClasses, code, setCode, addToast }) => {
   const handleFixBug = async () => {
     addToast({ message: "Fixing code with AI...", type: "info" });
     try {
-      const res = await fetch('http://localhost:5000/api/fix', {
+      const response = await fetch('http://localhost:5000/api/generate-code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ prompt: code }), // Using 'prompt' as key, but 'code' as value
       });
-      const data = await res.json();
+      const data = await response.json();
       addToast({ message: "Bug fix complete. See output.", type: "success" });
       setCodeOutput(data.result);
       setCurrentView('output');
@@ -262,5 +262,4 @@ const CodingCanvasSection = ({ themeClasses, code, setCode, addToast }) => {
     </div>
   );
 };
-
 export default CodingCanvasSection;

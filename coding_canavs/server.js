@@ -64,6 +64,28 @@ app.post('/api/fix', async (req, res) => {
   }
 });
 
+// New endpoint added for code generation
+app.post('/api/generate-code', async (req, res) => {
+  const { prompt } = req.body;
+  if (!prompt) return res.status(400).json({ error: 'No prompt provided' });
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: 'You are a helpful AI assistant that writes clean, working code in response to user prompts.' },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.3, // Added temperature as specified
+    });
+
+    res.json({ code: completion.choices[0].message.content });
+  } catch (err) {
+    console.error("🔴 Error in /api/generate-code:", err);
+    res.status(500).json({ error: err.message || 'OpenAI API error' });
+  }
+});
+
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });

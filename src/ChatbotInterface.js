@@ -11,7 +11,7 @@ import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
  */
 const Chatbot = ({
   themeClasses,
-  onOpenCodingCanvas,
+  onOpenCodingCanvas, // Not used in this component, but kept as it was in original props
   isMinimalMode = false,
   initialChatPrompt,
   onCodeGenerated,
@@ -21,7 +21,8 @@ const Chatbot = ({
   const [chatHistory, setChatHistory] = useState([]);
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [model, setModel] = useState('gemini-2.0-flash'); // Default AI model
+  // Default AI model set to gemini-2.0-flash as per instructions for empty API key
+  const [model, setModel] = useState('gemini-2.0-flash');
   const fileInputRef = useRef(null);
   const chatEndRef = useRef(null);
   const [selectedFileName, setSelectedFileName] = useState(null);
@@ -63,21 +64,31 @@ const Chatbot = ({
     } else if (userMessage.startsWith("Generate startup ideas for:")) {
       chatHistoryToSend.push({ role: "user", parts: [{ text: userMessage }] });
     } else if (userMessage.startsWith("Generate JavaScript code for:")) {
+      // If a codeGenerationAPI is provided, use it
       if (codeGenerationAPI) {
-        const generatedCode = await codeGenerationAPI(userMessage.replace("Generate JavaScript code for:", "").trim());
-        if (onCodeGenerated) {
-          onCodeGenerated(generatedCode.code);
+        try {
+          const generatedCode = await codeGenerationAPI(userMessage.replace("Generate JavaScript code for:", "").trim());
+          if (onCodeGenerated) {
+            onCodeGenerated(generatedCode.code); // Pass generated code to parent
+          }
+          return `Code generated successfully!\n\n${generatedCode.explanation}`;
+        } catch (error) {
+          console.error("Error generating code:", error);
+          return `Error generating code: ${error.message}`;
         }
-        return `Code generated successfully!\n\n${generatedCode.explanation}`;
+      } else {
+        return "Code generation service is not available.";
       }
     } else if (isDeepResearch) {
       chatHistoryToSend.push({ role: "user", parts: [{ text: `Perform market research on: "${userMessage}"` }] });
     } else {
+      // For regular messages, just add the current user message
       chatHistoryToSend.push({ role: "user", parts: [{ text: userMessage }] });
     }
 
     try {
       const payload = { contents: chatHistoryToSend };
+      // API Key is empty string as per instructions for models like gemini-2.0-flash
       const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${apiKey}`;
 
@@ -87,13 +98,23 @@ const Chatbot = ({
         body: JSON.stringify(payload)
       });
 
+      // Log response status for debugging
+      console.log('API Response Status:', response.status, response.statusText);
+
       const result = await response.json();
 
-      if (result.candidates?.length > 0 && result.candidates[0].content?.parts?.length > 0) {
+      // Log the full result for debugging
+      console.log('Full API Result:', result);
+
+      if (result.error) {
+        // Handle API-specific errors returned in the response body
+        console.error('Gemini API Error:', result.error);
+        return `Error from AI model: ${result.error.message || 'Unknown API error'}`;
+      } else if (result.candidates?.length > 0 && result.candidates[0].content?.parts?.length > 0) {
         return result.candidates[0].content.parts[0].text;
       } else {
-        console.error('Unexpected Gemini API response:', result);
-        return "Error: Could not get a valid response from the AI model.";
+        console.error('Unexpected Gemini API response structure:', result);
+        return "Error: Could not get a valid response from the AI model. Check console for details.";
       }
     } catch (error) {
       console.error('Error calling Gemini API:', error);
@@ -116,7 +137,7 @@ const Chatbot = ({
     if (!isInitial) {
       setChatHistory(prev => [...prev, newUserMessage]);
     }
-    setMessage('');
+    setMessage(''); // Clear message input
 
     const botResponseText = await callGeminiAPI(newUserMessage.text, model);
     setChatHistory(prev => [...prev, { role: "model", text: botResponseText }]);
@@ -142,7 +163,7 @@ const Chatbot = ({
     }
 
     setChatHistory(prev => [...prev, { role: "user", text: `Market Research: "${topic}"` }]);
-    setMessage('');
+    setMessage(''); // Clear message input
     const researchResult = await callGeminiAPI(topic, model, false, true);
     setChatHistory(prev => [...prev, { role: "model", text: researchResult }]);
   }, [message, callGeminiAPI, model]);
@@ -151,7 +172,13 @@ const Chatbot = ({
   const handleCopyToClipboard = useCallback(() => {
     const lastBotMessage = [...chatHistory].reverse().find(msg => msg.role === 'model');
     if (lastBotMessage) {
-      navigator.clipboard.writeText(lastBotMessage.text);
+      // Using document.execCommand('copy') as navigator.clipboard.writeText() might not work in iframes
+      const textarea = document.createElement('textarea');
+      textarea.value = lastBotMessage.text;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
       console.log("Copied to clipboard:", lastBotMessage.text);
     } else {
       console.log("No bot message to copy.");
@@ -182,7 +209,7 @@ const Chatbot = ({
     }
 
     setChatHistory(prev => [...prev, { role: "user", text: `Generate startup ideas for: "${topic}"` }]);
-    setMessage('');
+    setMessage(''); // Clear message input
     const ideas = await callGeminiAPI(`Generate startup ideas for: "${topic}"`, model);
     setChatHistory(prev => [...prev, { role: "model", text: ideas }]);
   }, [message, callGeminiAPI, model]);
@@ -203,7 +230,7 @@ const Chatbot = ({
       setSelectedFileName(files[0].name);
       setChatHistory(prev => [...prev, { role: "user", text: `File selected: ${files[0].name} (File handling is local, not sent to AI)` }]);
     }
-    event.target.value = null; // Reset file input
+    event.target.value = null; // Reset file input to allow selecting the same file again
   };
 
   // Clear selected file
@@ -211,7 +238,7 @@ const Chatbot = ({
     setSelectedFileName(null);
   }, []);
 
-  // Font size based on model name length
+  // Font size based on model name length for dropdown
   const getModelFontSizeClass = (modelName) => {
     const length = String(modelName || '').length;
     if (length <= 14) return 'text-sm';
@@ -219,11 +246,13 @@ const Chatbot = ({
     return 'text-xs';
   };
 
+  // Calculate min-height for textarea for responsive design
   const textareaMinHeightPx = isMinimalMode ? 64 : 32;
   const textareaMinHeight = `${textareaMinHeightPx}px`;
 
   return (
     <div className={`flex flex-col h-full rounded-lg ${themeClasses.textSecondary} ${isMinimalMode ? '' : 'relative'}`}>
+      {/* Top action buttons (not in minimal mode) */}
       {!isMinimalMode && (
         <div className="flex justify-end space-x-2 mb-2">
           <button
@@ -252,7 +281,7 @@ const Chatbot = ({
         </div>
       )}
 
-      {/* Chat History */}
+      {/* Chat History Display Area */}
       <div className={`flex-1 overflow-y-auto pr-2 space-y-3 text-sm pb-[100px] ${themeClasses.textPrimary} hide-scrollbar-vertical`}>
         {chatHistory.map((msg, index) => (
           <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
@@ -266,14 +295,26 @@ const Chatbot = ({
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  code({node, inline, className, children, ...props}) {
+                  h1: ({ node, ...props }) => <h1 className="text-xl font-bold text-blue-600 mt-4 mb-2" {...props} />,
+                  h2: ({ node, ...props }) => <h2 className="text-lg font-semibold text-purple-600 mt-3 mb-2" {...props} />,
+                  h3: ({ node, ...props }) => <h3 className="text-base font-semibold text-indigo-500 mt-2 mb-1" {...props} />,
+                  p: ({ node, ...props }) => <p className="mb-2 leading-relaxed" {...props} />,
+                  strong: ({ node, ...props }) => <strong className="font-semibold text-white" {...props} />,
+                  em: ({ node, ...props }) => <em className="italic text-gray-300" {...props} />,
+                  ul: ({ node, ...props }) => <ul className="list-disc ml-6 space-y-1 text-sm text-gray-300" {...props} />,
+                  ol: ({ node, ...props }) => <ol className="list-decimal ml-6 space-y-1 text-sm text-gray-300" {...props} />,
+                  li: ({ node, ...props }) => <li className="leading-snug" {...props} />,
+                  blockquote: ({ node, ...props }) => (
+                    <blockquote className="border-l-4 border-purple-500 pl-4 italic text-gray-400 my-2" {...props} />
+                  ),
+                  code({ node, inline, className, children, ...props }) {
                     const match = /language-(\w+)/.exec(className || '');
                     return !inline && match ? (
                       <SyntaxHighlighter style={oneDark} language={match[1]} PreTag="div" {...props}>
                         {String(children).replace(/\n$/, '')}
                       </SyntaxHighlighter>
                     ) : (
-                      <code className={className} {...props}>
+                      <code className="bg-gray-800 text-pink-400 px-1 py-0.5 rounded text-sm" {...props}>
                         {children}
                       </code>
                     );
@@ -285,6 +326,7 @@ const Chatbot = ({
             </div>
           </div>
         ))}
+        {/* Loading indicator */}
         {isLoading && (
           <div className="flex justify-start">
             <div className={`max-w-[85%] p-3 rounded-lg ${themeClasses.cardBg} ${themeClasses.textPrimary}`}>
@@ -292,6 +334,7 @@ const Chatbot = ({
             </div>
           </div>
         )}
+        {/* Scroll reference for auto-scrolling */}
         <div ref={chatEndRef} />
       </div>
 
@@ -300,6 +343,7 @@ const Chatbot = ({
         className={`${isMinimalMode ? 'w-full' : 'absolute bottom-0 left-0 right-0'} py-4 px-4 ${themeClasses.appBg} flex flex-col items-center z-10`}
         style={{ '--textarea-min-height': `${textareaMinHeightPx}px` }}
       >
+        {/* Selected file display */}
         {selectedFileName && (
           <div
             className={`flex items-center self-start mb-2 px-3 py-1 rounded-full ${themeClasses.cardBg} text-sm ${themeClasses.textSecondary} shadow-md`}
@@ -313,6 +357,7 @@ const Chatbot = ({
         )}
 
         <div className="flex items-end w-full relative">
+          {/* Generate Ideas button (not in minimal mode) */}
           {!isMinimalMode && (
             <button
               onClick={handleGenerateIdeas}
@@ -324,6 +369,7 @@ const Chatbot = ({
               <Sparkles className="w-4 h-4" />
             </button>
           )}
+          {/* Message Input Textarea */}
           <textarea
             className={`flex-grow px-4 py-2 ${isMinimalMode ? 'rounded-[5px]' : 'rounded-full'} bg-transparent ${themeClasses.textPrimary} placeholder-${themeClasses.textTertiary.replace('text-', '')} focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden text-base border ${themeClasses.borderColor} text-left`}
             rows="1"
@@ -331,17 +377,19 @@ const Chatbot = ({
             value={message}
             onChange={(e) => {
               setMessage(e.target.value);
-              e.target.style.height = 'auto';
-              e.target.style.height = e.target.scrollHeight + 'px';
+              e.target.style.height = 'auto'; // Reset height
+              e.target.style.height = e.target.scrollHeight + 'px'; // Set to scroll height
+              // Update CSS variable for button height synchronization
               e.target.closest('.flex-col').style.setProperty('--textarea-current-height', `${e.target.scrollHeight}px`);
             }}
             onKeyDown={handleKeyDown}
-            style={{ minHeight: textareaMinHeight, maxHeight: '120px' }}
+            style={{ minHeight: textareaMinHeight, maxHeight: '120px' }} // Max height to prevent excessive growth
           />
+          {/* Send Message button (not in minimal mode) */}
           {!isMinimalMode && (
             <button
               onClick={handleSendMessage}
-              disabled={isLoading}
+              disabled={isLoading || message.trim() === ''} // Disable if loading or message is empty
               className={`${themeClasses.accentBg} ${themeClasses.accentText} w-8 min-h-[var(--textarea-min-height)] rounded-full flex-shrink-0 flex items-center justify-center transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ml-2`}
               title="Send Message"
               style={{ height: 'var(--textarea-current-height, var(--textarea-min-height))' }}
@@ -353,6 +401,7 @@ const Chatbot = ({
 
         <div className="flex justify-between items-center w-full mt-2">
           <div className="flex items-center space-x-2">
+            {/* Attach File button */}
             <button
               className={`flex items-center justify-center w-8 min-h-[var(--textarea-min-height)] rounded-full ${themeClasses.cardBg}/60 ${themeClasses.textSecondary} ${themeClasses.buttonSecondaryHoverBg} transition-colors shadow-lg backdrop-blur-md backdrop-brightness-75 border ${themeClasses.borderColor}`}
               onClick={handlePlusClick}
@@ -368,31 +417,32 @@ const Chatbot = ({
               className="hidden"
             />
 
+            {/* Market Research button */}
             <button
               onClick={handleDeepResearch}
               disabled={isLoading}
               className="px-4 py-2 rounded-full text-sm font-medium
-                         bg-gradient-to-r from-purple-500 to-pink-500 text-white
-                         hover:from-purple-600 hover:to-pink-600 transition-colors duration-200
-                         disabled:opacity-50 disabled:cursor-not-allowed
-                         flex items-center justify-center text-center"
+                          bg-gradient-to-r from-purple-500 to-pink-500 text-white
+                          hover:from-purple-600 hover:to-pink-600 transition-colors duration-200
+                          disabled:opacity-50 disabled:cursor-not-allowed
+                          flex items-center justify-center text-center"
               title="Perform Market Research"
             >
               Market Research
             </button>
           </div>
 
+          {/* AI Model Selection */}
           <div className="relative">
             <select
               value={model}
               onChange={(e) => setModel(e.target.value)}
               className={`${themeClasses.buttonSecondaryBg} ${themeClasses.textPrimary} rounded-full pl-2 pr-6 py-0.5 ${getModelFontSizeClass(model)} appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500`}
             >
+              {/* Only include Gemini models as other API integrations are not present */}
               <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-              <option value="gemini-pro">Gemini Pro</option>
-              <option value="gpt-4o">GPT-4o</option>
-              <option value="claude">Claude</option>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash</option> {/* Added 1.5 Flash as a common option */}
+              <option value="gemini-1.0-pro">Gemini 1.0 Pro</option> {/* Renamed from gemini-pro for clarity */}
             </select>
             <div className={`pointer-events-none absolute inset-y-0 right-1.5 flex items-center ${themeClasses.textTertiary}`}>
               <ChevronDown className="w-3 h-3" />

@@ -1577,6 +1577,23 @@ const App = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Effect to suppress ResizeObserver warning
+  useEffect(() => {
+    const observerErrorHandler = function (err) {
+      if (err.message === "ResizeObserver loop completed with undelivered notifications.") {
+        return; // Suppress this specific warning
+      }
+      console.error(err); // Log other errors
+    };
+
+    window.addEventListener("error", observerErrorHandler);
+
+    // Cleanup the event listener when the component unmounts
+    return () => {
+      window.removeEventListener("error", observerErrorHandler);
+    };
+  }, []); // Empty dependency array means this runs once on mount and cleans up on unmount
+
 
   // Common function for generating code and explanation, used by both input areas
   const generateCodeAndExplanation = useCallback(async (prompt) => {
